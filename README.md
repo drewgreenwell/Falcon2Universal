@@ -6,7 +6,7 @@ This repository includes pinouts, raw serial data, and code samples to unlock th
 
 ## Why
 
-The [40W Falcon 2 Laser Module](https://www.elecrow.com/esp32-display-7-inch-hmi-display-rgb-tft-lcd-touch-screen-support-lvgl.html) is available separately at a sometimes not outrageous price. Additionally, since the Falcon 2 controllers are not available separately, you can often find units on ebay or local marketplaces for cheap.
+The [40W Falcon 2 Laser Module](https://store.creality.com/products/falcon2-40w-laser-module) is available separately at a sometimes not outrageous price. Additionally, since the Falcon 2 controllers are not available separately, you can often find units on ebay or local marketplaces for cheap.
 
 The downside to the falcon laser module is that it uses a proprietary connection (10 pin, 2.2mm pitch, 2 rows). Creality does not and will not provide any technical documentation (e.g. pinouts, data sheets, communication protocols). 
 
