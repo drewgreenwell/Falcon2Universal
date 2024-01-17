@@ -8,12 +8,10 @@
 #include <HardwareSerial.h>
 
 #include "list.hpp";
+#include "timer.hpp";
 #define BAUD_RATE 9600
 
 HardwareSerial SerialPort(2);
-
-long heartBeat = 1000;
-long lastHeartBeat = 0;
 
 int txIdxVal = 0;
 // message tokens
@@ -30,7 +28,7 @@ int prevData = 0;
 // parsed-ish version of inputData for serial debug
 String inputString("");
 // flag to indicate a line of data has been received (e.g. 0x0A \n)
-bool lineComplete = false;
+bool messageReceived = false;
 // todo: store for alarms
 // List alarms {.length=0};
 // store for current and last message received
@@ -41,16 +39,20 @@ List prevInputData {.length=0};
 List bootData1 {.length=18, .data={0x49, 0x4C, 0x6D, 0x70, 0x08, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0A}};
 List bootData2 {.length=14, .data={0x49, 0x4C, 0x6D, 0x70, 0x04, 0x05, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0A}};
 
-// boot sequence counts
+
+// boot sequence
 #define DEFAULT_BOOT_DELAY 1185       // amount of time after first message received before responding 
-#define BOOT1a 5
-#define BOOT2a 1
-#define BOOT1b 5
-#define BOOT2b 1
+#define BOOT_INTERVAL 180             // amount of time between each boot step
+#define BOOT_BUMP_AMT 32              // amount of time added to bootInterval after first message
+#define BOOT1a 5                      // send bootData1 5 times
+#define BOOT2a 1                      // send bootData2 1 time
+#define BOOT1b 5                      // send bootData1 5 times
+#define BOOT2b 1                      // send bootData2 1 time
 int boot1a = BOOT1a;
 int boot2a = BOOT2a;
 int boot1b = BOOT1b;
 int boot2b = BOOT2b;
+
 
 
 // flags and intervals for boot
@@ -58,13 +60,14 @@ bool rxReceived = false;              // have any complete packets have been rec
 bool waitingToBoot = true;            // has the boot sequence started
 bool booted = false;                  // has the boot sequence completed
 int bootDelay = DEFAULT_BOOT_DELAY;   // number of milliseconds after input received to start boot
-int bootInterval = 180;               // number of milliseconds between each boot message
-int lastBootDelayTick = 0;            // timer to track bootDelay            
-int lastBootTick = 0;                 // timer to track bootInterval
+int bootInterval = BOOT_INTERVAL;     // number of milliseconds between each boot message
 int lastWaitTick = 0;                 // timer to resend last message  todo: likely unnecessary. communication is fine without the extra chatter
 
 int lastMessageReceived = 0;          // timer to record amount of time since last message received
 int idleTimeout = 5000;               // number of milliseconds without communication from laser before resetting boot
+
+AppTimer bootTimer {.interval = bootDelay, .active = true, .repeat = true};  // timer to track bootDelay / bootInterval
+AppTimer debugTimer {.interval = 1000, .active = true, .repeat = true};     // timer to send debug messages over usb
 
 // 49 4C 6D 70 04 04 00 01 00 00 00 01 00 0A
 // 49 4C 6D 70 00 47 01 00 00 0A
@@ -80,43 +83,32 @@ void setup() {
 
 void loop() {
   long now = millis();
+  
   // send status over usb
-  if(now - lastHeartBeat > heartBeat){
-    lastHeartBeat = now;
-    String message = "pulse "
-    if(waitingToBoot){
-      message += "waiting for input to boot.";
-    } else if(!booted){
-      message += "booting.";
-    } else {
-      message += "booted.";
-    }
-    Serial.println(message);
+  debugTimer.loop();
+  if(debugTimer.elapsed) {
+    debugLoop();
   }
   // check if we need to start booting
-  if(!booted){
+  if(!booted) {
     // once input has been recived start timing
     if(rxReceived) {
-      if(lastBootDelayTick == 0){
-        lastBootDelayTick = now;
-      }
-      if(lastBootTick == 0){
-        lastBootTick = now;
-      }
       // waiting to fire our first boot message
-      if(waitingToBoot){
-        if(now - lastBootDelayTick > bootDelay){
-          lastBootDelayTick = millis();
+      if(waitingToBoot) {
+        bootTimer.loop();
+        if(bootTimer.elapsed) {
           waitingToBoot = false;
+          bootTimer.interval = bootInterval;
         }
       } else {
         // running boot sequence
-        if(now - lastBootTick > bootInterval){
-          lastBootTick = millis();
+        bootTimer.loop();
+        if(bootTimer.elapsed) {
           // after the first message there is a larger offset
+          // probably from some processing delay
           // add 32 milliseconds here to keep things lined up
-          if(boot1a == 4){
-            bootInterval += 32;
+          if(bootTimer.tickCount == 1) {
+            bootTimer.interval += BOOT_BUMP_AMT;
           }
           bootLoop();
         }
@@ -131,10 +123,10 @@ void loop() {
     }
   }
   // if we have processed a message, update it and echo back the new message after a short delay
-  if(lineComplete){
+  if(messageReceived){
     delay(30);
     handleMessage();
-    lineComplete = false;
+    messageReceived = false;
     lastWaitTick = now;
   } 
   // unnecessary. communication is fine without this extra chatter that the controller emits
@@ -150,6 +142,7 @@ void loop() {
 // restart timings and counts for boot loop
 void resetBoot() {
   bootDelay = DEFAULT_BOOT_DELAY;
+  bootInterval = BOOT_INTERVAL;
   boot1a = BOOT1a;
   boot2a = BOOT2a;
   boot1b = BOOT1b;
@@ -165,22 +158,37 @@ void bootLoop(){
   if(boot1a > 0){
     writeList(bootData1);
     boot1a -= 1;
-    Serial.println("boot1a - " + String(boot1a));
+    Serial.print("boot1a - ");
+    Serial.println(boot1a);
   } else if(boot2a > 0){
     writeList(bootData2);
     boot2a -= 1;
-    Serial.println("boot2a - " + String(boot2a));
+    Serial.print("boot2a - ");
+    Serial.println(boot2a);
   } else if(boot1b > 0){
     writeList(bootData1);
     boot1b -= 1;
-    Serial.println("boot1b - " + String(boot1b));
+    Serial.print("boot1b - ");
+    Serial.println(boot1b);
   } else if(boot2b > 0) {
     writeList(bootData2);
     boot2b -= 1;
-    Serial.println("boot2b - " + String(boot2b));
+    Serial.print("boot2b - ");
+    Serial.println(boot2b);
   } else {
     booted = true;
   }
+}
+
+void debugLoop(){
+    Serial.print("pulse ");
+    if(waitingToBoot){
+      Serial.println("waiting for input to boot.");
+    } else if(!booted){
+      Serial.println("booting.");
+    } else {
+      Serial.println("booted.");
+    }
 }
 
 void handleMessage(){
@@ -209,9 +217,15 @@ void saveList(List &list, List &toList){
 // write the packet to serial
 void writeList(List &list){
   list.data[5] = txIdxVal;
+  byte lastByte;
   for(byte i = 0; i < list.length; i++){
-    SerialPort.write(list.data[i]);
-    Serial.print((char)list.data[i]);
+    lastByte = list.data[i];
+    SerialPort.write(lastByte);
+    Serial.print((char)lastByte);
+  }
+  // make sure debug message is closed
+  if(lastByte != 0x0A){
+    Serial.println();
   }
   txIdxVal += 1;
   if(txIdxVal > 255){
@@ -222,7 +236,7 @@ void writeList(List &list){
 
 // check for communication and start parsing
 void checkSerial() {
-  if(lineComplete){
+  if(messageReceived){
     return;
   }
   while (SerialPort.available()) 
@@ -276,7 +290,7 @@ void checkSerial() {
     // if the incoming character is a newline, set a flag so the main loop can
     if (inChar == '\n') {
       if(rxReceived){
-        lineComplete = true;
+        messageReceived = true;
       } else {
         // flag that input has been received so booting can begin
         rxReceived = true;

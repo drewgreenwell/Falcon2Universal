@@ -3,9 +3,6 @@ public:
     byte length;
     byte data[200];
     // pass separate input data
-    byte packetLength;
-    byte packetIndex;
-    byte packetType;
     void append(byte item) {
       if (length < 200) { 
         length += 1;
