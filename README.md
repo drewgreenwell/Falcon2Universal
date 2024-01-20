@@ -32,10 +32,4 @@ I'm currently working on pcb a adapter board with a display to output alarm code
 
 ## Raw Data
 
-[Raw Boot Sequence RX](https://raw.githubusercontent.com/drewgreenwell/Falcon2Universal/main/content/falcon-boot-rx.txt)
-
-[Raw Boot Sequence TX](https://raw.githubusercontent.com/drewgreenwell/Falcon2Universal/main/content/falcon-boot-tx.txt)
-
-[Semi Parsed Boot Sequence RX](https://raw.githubusercontent.com/drewgreenwell/Falcon2Universal/main/content/falcon-boot-rx-parsed.txt)
-
-[Semi Parsed Boot Sequence TX](https://raw.githubusercontent.com/drewgreenwell/Falcon2Universal/main/content/falcon-boot-tx-parsed.txt)
+[Laatest Raw Boot Files and WIP is here](https://raw.githubusercontent.com/drewgreenwell/Falcon2Universal/main/content/3.0.5-Dumps/)
