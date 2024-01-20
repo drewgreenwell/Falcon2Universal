@@ -14,7 +14,7 @@ Byte 5 = Data length which starts at Byte 8
 
 Byte 6 = The index of the packet. This is tracked separately on RX and TX and loops at 255
 
-Byte 7 =  This appears to be a control character 00, 01, 07 - PAD SOH BEL. Padding, Start of Header, and Alarm identifiers
+Byte 7 =  This appears to be a control character 00, 01, 07 - NUL SOH BEL. Null, Start of Header, and Alarm identifiers
 
 Bytes 8-8+Byte5 = WIP Data. e.g. Firmware name, and possibly some multi byte Big5 encoded chinese characters in this data
 
