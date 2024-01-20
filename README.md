@@ -21,7 +21,7 @@ In the most basic sense, this code just handshakes with the laser, updates recei
 
 ## In Progress
 
-I'm currently working on pcb a adapter board with a display to output alarm codes for monitoring. Flame sensor support for boards like the MKS DLC32 will be available.
+I'm currently working on pcb adapter board with a display to output alarm codes for monitoring. Flame sensor support for boards like the MKS DLC32 will be available.
 
 
 ## Pinouts
@@ -32,4 +32,4 @@ I'm currently working on pcb a adapter board with a display to output alarm code
 
 ## Raw Data
 
-[Laatest Raw Boot Files and WIP is here](https://raw.githubusercontent.com/drewgreenwell/Falcon2Universal/main/content/3.0.5-Dumps/)
+[Laatest Raw Boot Files and WIP](https://github.com/drewgreenwell/Falcon2Universal/tree/main/content/3.0.5-Dumps)
