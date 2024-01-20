@@ -10,9 +10,9 @@ Packet decoding is still a work in progress but here is a dump of what I know so
 
 Bytes 1-4 = The same on every packet 49 4C 6D 70  - I L m p.
 
-Byte 5 = Fata length which starts at Byte 8
+Byte 5 = Data length which starts at Byte 8
 
-Byte 6 = The index of the packet. This is tracked separately on RX and TX
+Byte 6 = The index of the packet. This is tracked separately on RX and TX and loops at 255
 
 Byte 7 =  This appears to be a control character 00, 01, 07 - PAD SOH BEL. Padding, Start of Header, and Alarm identifiers
 
