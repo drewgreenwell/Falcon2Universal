@@ -12,6 +12,11 @@
         table {
             width: 100%;
         }
+        th {
+            text-align: left;
+            font-weight: 700;
+            background-color: #edeaea;;
+        }
         .prefix {
             width: 10%;
         }
@@ -35,25 +40,68 @@
 	<script>
         function parseHex(){
             var rows = document.getElementById('hex').value.split('\n');
-            var text = '<table>';
+            var text = '<table onclick="swapType()"><thead><tr>';
+                text += '<th>Prefix</th><th>Len</th><th>Idx</th><th>Type</th><th>?</th><th>Data</th><th>?</th><th>End</th>';
+                text += '</tr></thead><tbody>';
             for(var i = 0; i < rows.length; i++){
                 var row = rows[i];
                 text += '<tr>';
                 var col = row.split(' ');
-                text += `<td class="prefix">${col[0]} ${col[1]} ${col[2]} ${col[3]}</td>`;
+                text += `<td class="prefix" data-type="hex">${col[0]} ${col[1]} ${col[2]} ${col[3]}</td>`;
                 var len = parseInt(col[4], 16) 
-                text += `<td class="one-byte">${len}</td>`;
-                text += `<td class="one-byte">${parseInt(col[5], 16) }</td>`;
-                text += `<td class="one-byte">${col[6]}</td>`;
-                var data = col.slice(7, 7 + len);
-                text += `<td class="data">${data.join(' ')}</td>`;
-                var nextByte = 7 + len + 1; 
-                text += `<td class="one-byte">${col[nextByte]}</td>`;
-                text += `<td class="one-byte">${col[nextByte + 1]}</td>`;
+                text += `<td class="one-byte" data-type="dec">${len}</td>`;
+                text += `<td class="one-byte" data-type="dec">${parseInt(col[5], 16) }</td>`;
+                text += `<td class="one-byte" data-type="hex">${col[6]}</td>`;
+                text += `<td class="one-byte" data-type="hex">${col[7]}</td>`;
+                var data = col.slice(8, 8 + len);
+                text += `<td class="data" data-type="hex">${data.join(' ')}</td>`;
+                var nextByte = 8 + len; 
+                text += `<td class="one-byte" data-type="hex">${col[nextByte]}</td>`;
+                text += `<td class="one-byte" data-type="hex">${col[nextByte + 1]}</td>`;
                 text += '</tr>';
             }
-            text += '</table>';
+            text += '</tbody></table>';
             document.getElementById('parsed').innerHTML = text;
+        }
+
+        function swapType() {
+            var target = event.target;
+            if(target.nodeName === 'TD'){
+                var t = target.getAttribute('data-type');
+                var vals = target.innerHTML.split(' ');
+                var result = '';
+                var nt = t;
+                for(var i = 0; i < vals.length; i ++){
+                    var c = vals[i];
+                    switch(t){
+                        case "hex":
+                        var val = parseInt(c, 16);
+                        result += val + ' ';
+                        nt = "dec";
+                        break;
+                        case "dec":
+                        var val = parseInt(c, 10);
+                        var str = String.fromCharCode(val);
+                        if(str == ''){
+                            str = 0;
+                        }
+                        result += str + ' ';
+                        nt = 'char';
+                        break;
+                        case "char":
+                        var val = c;
+                        if(val === ''){
+                            val = '\u0000';
+                        }
+                        var code = val.charCodeAt(0);
+                        result += code.toString(16).toUpperCase().padStart(2, '0') + ' ';
+                        nt = 'hex';
+                        break;
+                    }
+                }
+                target.innerHTML = result.trim();
+                target.setAttribute('data-type', nt);
+            }
         }
     </script>
   </body>
