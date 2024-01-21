@@ -5,7 +5,7 @@ This folder includes dumps of serial communication in hex format from the laser 
 Each file includes a 45 second capture of data.
 
 You can paste the file into the parser to visualize the data
-[Falcon Hex Parser](https://htmlpreview.github.io/?https://github.com/drewgreenwell/Falcon2Universal/blob/main/content/parser.html)
+<a href="https://htmlpreview.github.io/?https://github.com/drewgreenwell/Falcon2Universal/blob/main/content/parser.html" target="_blank">Falcon Hex Parser</a>
 
 ## Legend
 
