@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Falcon HEX Parser</title>
+    <style type="text/css">
+        #parsed {
+            font-family: monospace;
+        }
+        table {
+            width: 100%;
+        }
+        .prefix {
+            width: 10%;
+        }
+        .one-byte {
+            width: 2.5%;
+        }
+        .data {
+            
+        }
+    </style>
+  </head>
+  <body>
+    <h1>Falcon Hex Parser</h1>
+    <div>
+        <textarea id="hex"></textarea>
+        <button id="parse" onclick="parseHex()">Parse</button>
+    </div>
+    <div id="parsed">
+
+    </div>
+	<script>
+        function parseHex(){
+            var rows = document.getElementById('hex').value.split('\n');
+            var text = '<table>';
+            for(var i = 0; i < rows.length; i++){
+                var row = rows[i];
+                text += '<tr>';
+                var col = row.split(' ');
+                text += `<td class="prefix">${col[0]} ${col[1]} ${col[2]} ${col[3]}</td>`;
+                var len = parseInt(col[4], 16) 
+                text += `<td class="one-byte">${len}</td>`;
+                text += `<td class="one-byte">${parseInt(col[5], 16) }</td>`;
+                text += `<td class="one-byte">${col[6]}</td>`;
+                var data = col.slice(7, 7 + len);
+                text += `<td class="data">${data.join(' ')}</td>`;
+                var nextByte = 7 + len + 1; 
+                text += `<td class="one-byte">${col[nextByte]}</td>`;
+                text += `<td class="one-byte">${col[nextByte + 1]}</td>`;
+                text += '</tr>';
+            }
+            text += '</table>';
+            document.getElementById('parsed').innerHTML = text;
+        }
+    </script>
+  </body>
+</html>

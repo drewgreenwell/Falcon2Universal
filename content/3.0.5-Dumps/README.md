@@ -56,6 +56,6 @@ Last Byte = 0A \n End of packet
 | Last Byte -1                | Last Byte   |
 |-----------------------------|-------------|
 |    ?                        | New Line    |
-| 01,02,03                    |    0A       |
+| 01,02,03, 09(in header)     |    0A       |
 | Possibly a dec/bin value    |             |
 | Control character doesnt makes sense here |
