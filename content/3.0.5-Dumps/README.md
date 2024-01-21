@@ -14,11 +14,11 @@ Byte 5 = Data length which starts at Byte 8
 
 Byte 6 = The index of the packet. This is tracked separately on RX and TX and loops at 255
 
-Byte 7 =  This appears to be a control character 00, 01, 07 - NUL SOH BEL. Null, Start of Header, and Alarm identifiers
+Byte 7 =  This appears to be a control character 00, 01, 07 - NUL SOH BEL. Null, Start of Header, and Alarm identifier
 
-Byte 8 = Byte 8 appears to be a control character on every message but heading messages (01 in byte 7). On headings this is either part of the message or an Unclosed '(' at the beginning of the message. Control characters in Byte 8 are 00, 02, 80 - NUL, SOT, PAD. Null, Start of Text, and Padding
+Byte 8 = Byte 8 appears to be a control character on every message but heading messages (01 in byte 7). On headings this is either part of the message or an unclosed '(' at the beginning of the message. Control characters in Byte 8 are 00, 02, 80 - NUL, SOT, PAD. Null, Start of Text, and Padding
 
-Bytes 9-9+Byte5 = Data. e.g. Firmware name, and possibly some multi byte Big5 encoded chinese characters in this data. B
+Bytes 9-9+Byte5 = Data. e.g. Firmware name, and possibly some multi byte Big5 encoded chinese characters in this data.
 
 Last Byte -1 = Unknown, possibly IR, Force, Temp values.
 
@@ -53,7 +53,9 @@ Last Byte = 0A \n End of packet
 | *FF* **B3 47** *00 00* 80 40 39 | no  | 蛄 |
 |  En = mayfly?? / mole cricket??            |
 
-| Byte -1 | Last Byte |
-|---------|-----------|
-|    ?    | New Line  |
-|         |    0A     |
+| Last Byte -1                | Last Byte   |
+|-----------------------------|-------------|
+|    ?                        | New Line    |
+| 01,02,03                    |    0A       |
+| Possibly a dec/bin value    |             |
+| Control character doesnt makes sense here |
