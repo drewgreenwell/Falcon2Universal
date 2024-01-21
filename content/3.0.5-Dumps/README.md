@@ -16,12 +16,31 @@ Byte 6 = The index of the packet. This is tracked separately on RX and TX and lo
 
 Byte 7 =  This appears to be a control character 00, 01, 07 - NUL SOH BEL. Null, Start of Header, and Alarm identifiers
 
-Bytes 8-8+Byte5 = WIP Data. e.g. Firmware name, and possibly some multi byte Big5 encoded chinese characters in this data
+Bytes 8-8+Byte5 = Data. e.g. Firmware name, and possibly some multi byte Big5 encoded chinese characters in this data. Byte 8 appears to be a control character on every message but heading messages (01 in byte 7). Control characters in Byte 8 are 00, 02, 80 (NUL, SOT, PAD)
 
-Last Byte -2, -1 = WIP Unknown, possibly IR, Force, Temp values.
+Last Byte -2, -1 = Unknown, possibly IR, Force, Temp values.
 
 Last Byte = 0A \n End of packet
 
+| Bytes 1-4    | Byte 5 | Byte 6 |  Byte 7 | 
+|--------------|--------|--------|---------|
+| PREFIX       | LENGTH | INDEX  |   BEL   |
+| 49 4c 6D 70  |   08   |   01   |   07    |
+| I  L  M  P   |   --   |   --   |   --    |
 
 
+| Byte 9+                         | Air| Cn |
+|---------------------------------|-----|----|
+| Data                            |     |    |   
+| *3F* **B9 47** *00 70* 27 45 9B | max | 逼 |
+| *37* **B8 47** *00 B0* 07 45 B2 | mid | 矮 |
+| *03* **B4 47** *00 00* 80 3F BD | min | 孱 |
+| *FD* **B3 47** *00 00* 00 41 B8 | min | 蛄 |
+| *00* **B4 47** *00 00* 40 40 7B | no  | 孱 |
+| *FF* **B3 47** *00 00* 80 40 39 | no  | 蛄 |
 
+
+| Byte -1 | Last Byte |
+|---------|-----------|
+|    ?    | New Line  |
+|         |    0A     |
