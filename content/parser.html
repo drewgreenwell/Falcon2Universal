@@ -17,6 +17,9 @@
             font-weight: 700;
             background-color: #edeaea;;
         }
+        th, td {
+            padding: .5em;
+        }
         .prefix {
             width: 10%;
         }
@@ -25,6 +28,19 @@
         }
         .data {
             
+        }
+        td, span {
+            position: relative;
+        }
+        td span { display: inline-block; padding-bottom: .5em; }
+        td[title]::after, span[title]::after {
+            font-size: .5em;
+            color: red;
+            content: attr(title);
+            background-color: rgb(173, 215, 253);
+            position: absolute;
+            top: -1em;
+            left: 0px;
         }
     </style>
   </head>
@@ -38,9 +54,12 @@
 
     </div>
 	<script>
+
+        var decoder = new TextDecoder('big5');
+        var encoder = new TextEncoder();
         function parseHex(){
             var rows = document.getElementById('hex').value.split('\n');
-            var text = '<table onclick="swapType()"><thead><tr>';
+            var text = '<table onclick="tableClick()"><thead><tr>';
                 text += '<th>Prefix</th><th>Len</th><th>Idx</th><th>Type</th><th>?</th><th>Data</th><th>?</th><th>End</th>';
                 text += '</tr></thead><tbody>';
             for(var i = 0; i < rows.length; i++){
@@ -54,7 +73,21 @@
                 text += `<td class="one-byte" data-type="hex">${col[6]}</td>`;
                 text += `<td class="one-byte" data-type="hex">${col[7]}</td>`;
                 var data = col.slice(8, 8 + len);
-                text += `<td class="data" data-type="hex">${data.join(' ')}</td>`;
+                text += `<td class="data" data-type="hex">`;
+                var buffer = '';
+                for(var j = 0; j < data.length; j++){
+                    // if(j == 1 && data.length == 8){
+                    //     buffer = data[j];
+                    // } else if (j == 2) {
+                    //     // todo: big5
+                    //     var arr = new Uint8Array([parseInt(buffer, 16), parseInt(data[j], 16)]);
+                    //     text += `<span data-type='big5'>${decoder.decode(arr)}</span> `;
+                    //     buffer = '';
+                    // } else {
+                        text += `<span data-type='hex'>${data[j]}</span> `;
+                    //}
+                }
+                text += "</td>";
                 var nextByte = 8 + len; 
                 text += `<td class="one-byte" data-type="hex">${col[nextByte]}</td>`;
                 text += `<td class="one-byte" data-type="hex">${col[nextByte + 1]}</td>`;
@@ -64,42 +97,82 @@
             document.getElementById('parsed').innerHTML = text;
         }
 
-        function swapType() {
+        function tableClick() {
             var target = event.target;
-            if(target.nodeName === 'TD'){
-                var t = target.getAttribute('data-type');
-                var vals = target.innerHTML.split(' ');
-                var result = '';
-                var nt = t;
-                for(var i = 0; i < vals.length; i ++){
-                    var c = vals[i];
-                    switch(t){
-                        case "hex":
-                        var val = parseInt(c, 16);
-                        result += val + ' ';
-                        nt = "dec";
-                        break;
-                        case "dec":
-                        var val = parseInt(c, 10);
-                        var str = String.fromCharCode(val);
-                        if(str == ''){
-                            str = 0;
-                        }
-                        result += str + ' ';
-                        nt = 'char';
-                        break;
-                        case "char":
-                        var val = c;
-                        if(val === ''){
-                            val = '\u0000';
-                        }
-                        var code = val.charCodeAt(0);
-                        result += code.toString(16).toUpperCase().padStart(2, '0') + ' ';
-                        nt = 'hex';
-                        break;
+            if(target.nodeName === 'TD' && target.getAttribute('class') !== 'data'){
+                swapType(target);
+            } else if(target.nodeName === 'SPAN'){
+                swapType(target);
+            }
+        }
+
+        function swapType(target) {
+            var t = target.getAttribute('data-type');
+            var vals = target.innerHTML.split(' ');
+            var result = '';
+            var nt = t;
+            var buffer = '';
+            var skip = false;
+            for(var i = 0; i < vals.length; i ++){
+                var c = vals[i];
+                switch(t){
+                    case "hex":
+                    var val = parseInt(c, 16);
+                    result += val + ' ';
+                    nt = "dec";
+                    break;
+                    case "big5":
+                    var arr = encoder.encode(c);
+                    var b1 = arr[0].toString(16).padStart(2, '0');
+                    var b2 = arr[1].toString(16).padStart(2, '0');
+                    var b3 = arr[2].toString(16).padStart(2, '0');
+                    //debugger;
+                    result += b1 + ' ' + b2 + ' ' + b3; 
+                    nt = 'hexb';
+                    break;
+                    case "hexb":
+                    if(buffer == ''){
+                        buffer = c;
+                    } else {
+                        var arr = new Uint8Array([parseInt(buffer, 16), parseInt(c, 16)]);
+                        result += decoder.decode(arr);
                     }
+                    nt = "big5";
+                    break;
+                    case "dec":
+                    var val = parseInt(c, 10);
+                    // var char = encoder.decode(new Uint8Array([0xFD,0xB3,0x47]));
+                    // var str = char;
+                    var str = String.fromCharCode(val);
+                    if(str == ''){
+                        str = 0;
+                    }
+                    result += str + ' ';
+                    nt = 'char';
+                    break;
+                    case "char":
+                    var val = c;
+                    if(val === ''){
+                        val = '\u0000';
+                    }
+                    var code = val.charCodeAt(0);
+                    result += code.toString(2).toUpperCase().padStart(8, '0') + ' ';
+                    nt = 'bin';
+                    break;
+                    case "bin":
+                    var val = c;
+                    if(val === ''){
+                        val = '00000000';
+                    }
+                    var bits = parseInt(val, 2);
+                    result += bits.toString(16).toUpperCase().padStart(2, '0') + ' ';
+                    nt = 'hex';
+                    break;
                 }
+            }
+            if(!skip){
                 target.innerHTML = result.trim();
+                target.setAttribute("title", nt);
                 target.setAttribute('data-type', nt);
             }
         }
