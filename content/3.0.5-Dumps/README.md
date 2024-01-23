@@ -2,7 +2,7 @@
 
 This folder includes dumps of serial communication in hex format from the laser to the controller and back (RX from laser, TX from controller)
 
-Each file includes a 45 second capture of data.
+Each file includes a 45 second capture of data. About ~35 seconds after boot, the laser fans and air assist will shut off. This triggers the air alarm but it is ignored by default on the controller.
 
 You can paste the file into the parser to visualize the data
 <a href="https://htmlpreview.github.io/?https://github.com/drewgreenwell/Falcon2Universal/blob/main/content/parser.html" target="_blank">Falcon Hex Parser</a>
@@ -13,7 +13,7 @@ Packet decoding is still a work in progress but here is a dump of what I know so
 
 Bytes 1-4 = The same on every packet 49 4C 6D 70  - I L m p.
 
-Byte 5 = Data length which starts at Byte 8
+Byte 5 = Data length which starts at Byte 9
 
 Byte 6 = The index of the packet. This is tracked separately on RX and TX and loops at 255
 
