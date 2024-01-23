@@ -6,6 +6,9 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Falcon HEX Parser</title>
     <style type="text/css">
+        body {
+            font-family: 'Courier New', Courier, monospace;
+        }
         #parsed {
             font-family: monospace;
         }
@@ -18,7 +21,7 @@
             background-color: #edeaea;;
         }
         th, td {
-            padding: .5em;
+            padding: 1em .5em;
         }
         .prefix {
             width: 10%;
@@ -31,29 +34,78 @@
         }
         td, span {
             position: relative;
+            cursor: pointer;
         }
-        td span { display: inline-block; padding-bottom: .5em; }
+        td span { 
+            display: inline-block;
+            background-color: rgb(229, 230, 233);
+            padding: .25em;
+            line-height: 1.25em;
+        }
         td[title]::after, span[title]::after {
-            font-size: .5em;
+            font-size: .75em;
             color: red;
             content: attr(title);
-            background-color: rgb(173, 215, 253);
+            background-color: rgb(229, 230, 233);
             position: absolute;
-            top: -1em;
+            top: -.75em;
             left: 0px;
+            line-height: .75em;
+        }
+
+        td[title]::after {
+            top: 0px;
+        }
+        .fields {
+            display: flex;
+            flex-direction: row;
+        }
+        .fields fieldset {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 40%;
+        }
+
+        .fields fieldset > * {
+            margin-bottom: 1em;
+        }
+        
+        .fields fieldset select {
+            max-width: 90%;
+        }
+        .fields .separator {
+            flex-basis: 10%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
   </head>
   <body>
     <h1>Falcon Hex Parser</h1>
-    <div>
-        <textarea id="hex"></textarea>
-        <button id="parse" onclick="parseHex()">Parse</button>
-        <select id="files">
-            <option value="">Select a file</option>
-        </select>
-        <button id="parseFile" onclick="parseFile()">Parse File</button>
+    <div class="fields">
+        <fieldset>
+            <legend>Select a file</legend>
+            <select id="files">
+                <option value="">Select a file</option>
+            </select>
+            <div>
+                <button id="parseFile" onclick="parseFile()">Parse File</button>
+            </div>
+        </fieldset>
+        <div class="separator">
+            <p>or</p>
+        </div>
+        <fieldset>
+            <legend>Enter Text</legend>
+            <textarea id="hex"></textarea>
+            <div>
+                <button id="parse" onclick="parseHex()">Parse</button>
+            </div>
+        </fieldset>
     </div>
+    <p>After parsing the data, you can click on cells or highlighted bytes to convert between formats. Notice a pattern? Send a message to drewgreenwell@ your favorite email platform and add Falcon in the subject. You can also reach out here on github.</p>
     <div id="parsed">
 
     </div>
@@ -63,10 +115,11 @@
         var decoder = new TextDecoder('big5');
         var encoder = new TextEncoder();
         function parseHex(){
-            var rows = document.getElementById('hex').value.split('\n');
+            var rows = document.getElementById('hex').value;
             parseHexText(rows);
         }
         function parseHexText(rows) {
+            rows = rows.split('\n');
             var text = '<table onclick="tableClick()"><thead><tr>';
                 text += '<th>Prefix</th><th>Len</th><th>Idx</th><th>Type</th><th>?</th><th>Data</th><th>?</th><th>End</th>';
                 text += '</tr></thead><tbody>';
@@ -107,15 +160,42 @@
 
         function tableClick() {
             var target = event.target;
-            if(target.nodeName === 'TD' && target.getAttribute('class') !== 'data'){
-                swapType(target);
+            var targetType = target.getAttribute('data-type');
+            var className = target.getAttribute('class');
+            if(target.nodeName === 'TD') {
+                if(className !== 'data') {
+                    swapType(target, targetType);
+                } else {
+                    var newType = '';
+                    for (var i = 0; i < target.childNodes.length; i++) {
+                        var node = target.childNodes[i];
+                        if (node.nodeName === 'SPAN') {
+                            newType = swapType(node, targetType);
+                        }
+                    }
+                    target.setAttribute('data-type', newType)
+                }
             } else if(target.nodeName === 'SPAN'){
-                swapType(target);
+                swapType(target, targetType);
             }
         }
 
-        function swapType(target) {
-            var t = target.getAttribute('data-type');
+        function getIntFrom(str, dt){
+            switch(dt){
+                case "hex":
+                    return parseInt(str, 16);
+                case "dec":
+                    return parseInt(str, 10);
+                case "char":
+                    return str.charCodeAt(0);
+                case "bin":
+                    return parseInt(str, 2);
+            }
+        }
+
+        function swapType(target, targetType) {
+            var t = targetType;
+            var currentType = target.getAttribute('data-type');
             var vals = target.innerHTML.split(' ');
             var result = '';
             var nt = t;
@@ -125,7 +205,7 @@
                 var c = vals[i];
                 switch(t){
                     case "hex":
-                    var val = parseInt(c, 16);
+                    var val = getIntFrom(c, currentType);
                     result += val + ' ';
                     nt = "dec";
                     break;
@@ -148,7 +228,7 @@
                     nt = "big5";
                     break;
                     case "dec":
-                    var val = parseInt(c, 10);
+                    var val = getIntFrom(c, currentType);
                     // var char = encoder.decode(new Uint8Array([0xFD,0xB3,0x47]));
                     // var str = char;
                     var str = String.fromCharCode(val);
@@ -160,19 +240,19 @@
                     break;
                     case "char":
                     var val = c;
-                    if(val === ''){
+                    if(currentType ==='char' && val === ''){
                         val = '\u0000';
                     }
-                    var code = val.charCodeAt(0);
+                    var code = getIntFrom(val, currentType);
                     result += code.toString(2).toUpperCase().padStart(8, '0') + ' ';
                     nt = 'bin';
                     break;
                     case "bin":
                     var val = c;
-                    if(val === ''){
+                    if(currentType === 'bin' && val === ''){
                         val = '00000000';
                     }
-                    var bits = parseInt(val, 2);
+                    var bits = getIntFrom(val, currentType);
                     result += bits.toString(16).toUpperCase().padStart(2, '0') + ' ';
                     nt = 'hex';
                     break;
@@ -183,6 +263,7 @@
                 target.setAttribute("title", nt);
                 target.setAttribute('data-type', nt);
             }
+            return nt;
         }
 
         async function parseFile() {
