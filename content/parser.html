@@ -41,6 +41,8 @@
             background-color: rgb(229, 230, 233);
             padding: .25em;
             line-height: 1.25em;
+            min-width: 16px;
+            min-height: 1.25em;
         }
         td[title]::after, span[title]::after {
             font-size: .75em;
@@ -187,78 +189,109 @@
                 case "dec":
                     return parseInt(str, 10);
                 case "char":
-                    return str.charCodeAt(0);
+                if(str === ''){
+                    str = '\u0000';
+                }
+                return str.charCodeAt(0);
                 case "bin":
-                    return parseInt(str, 2);
+                if(str === ''){
+                    str = '00000000';
+                }
+                return parseInt(str, 2);
+            }
+        }
+
+        function convertInt(num, dt){
+            switch(dt){
+                case "hex":
+                    return num.toString(16).padStart(2, '0').toUpperCase();
+                case "dec":
+                    return num.toString();
+                case "char":
+                    return String.fromCharCode(num);
+                case "bin":
+                    return num.toString(2).padStart(8, 0);
             }
         }
 
         function swapType(target, targetType) {
-            var t = targetType;
             var currentType = target.getAttribute('data-type');
             var vals = target.innerHTML.split(' ');
             var result = '';
-            var nt = t;
+            var nt = '';
             var buffer = '';
             var skip = false;
             for(var i = 0; i < vals.length; i ++){
                 var c = vals[i];
-                switch(t){
+                var num = getIntFrom(c, currentType);
+               switch(targetType) {
                     case "hex":
-                    var val = getIntFrom(c, currentType);
-                    result += val + ' ';
-                    nt = "dec";
-                    break;
-                    case "big5":
-                    var arr = encoder.encode(c);
-                    var b1 = arr[0].toString(16).padStart(2, '0');
-                    var b2 = arr[1].toString(16).padStart(2, '0');
-                    var b3 = arr[2].toString(16).padStart(2, '0');
-                    //debugger;
-                    result += b1 + ' ' + b2 + ' ' + b3; 
-                    nt = 'hexb';
-                    break;
-                    case "hexb":
-                    if(buffer == ''){
-                        buffer = c;
-                    } else {
-                        var arr = new Uint8Array([parseInt(buffer, 16), parseInt(c, 16)]);
-                        result += decoder.decode(arr);
-                    }
-                    nt = "big5";
-                    break;
+                        nt = "dec";
+                        break;
                     case "dec":
-                    var val = getIntFrom(c, currentType);
-                    // var char = encoder.decode(new Uint8Array([0xFD,0xB3,0x47]));
-                    // var str = char;
-                    var str = String.fromCharCode(val);
-                    if(str == ''){
-                        str = 0;
-                    }
-                    result += str + ' ';
-                    nt = 'char';
-                    break;
+                        nt = "char";
+                        break;
                     case "char":
-                    var val = c;
-                    if(currentType ==='char' && val === ''){
-                        val = '\u0000';
-                    }
-                    var code = getIntFrom(val, currentType);
-                    result += code.toString(2).toUpperCase().padStart(8, '0') + ' ';
-                    nt = 'bin';
-                    break;
+                        nt = "bin"
+                        break;
                     case "bin":
-                    var val = c;
-                    if(currentType === 'bin' && val === ''){
-                        val = '00000000';
-                    }
-                    var bits = getIntFrom(val, currentType);
-                    result += bits.toString(16).toUpperCase().padStart(2, '0') + ' ';
-                    nt = 'hex';
-                    break;
+                        nt = 'hex';
+                        break;
                 }
+                if(nt !== '') {
+                    var str = convertInt(num, nt);
+                    result = str + ' ';
+                }
+            //     switch(t){
+            //         case "hex":
+            //         var val = getIntFrom(c, currentType);
+            //         result += val + ' ';
+            //         nt = "dec";
+            //         break;
+            //         case "big5":
+            //         var arr = encoder.encode(c);
+            //         var b1 = arr[0].toString(16).padStart(2, '0');
+            //         var b2 = arr[1].toString(16).padStart(2, '0');
+            //         var b3 = arr[2].toString(16).padStart(2, '0');
+            //         //debugger;
+            //         result += b1 + ' ' + b2 + ' ' + b3; 
+            //         nt = 'hexb';
+            //         break;
+            //         case "hexb":
+            //         if(buffer == ''){
+            //             buffer = c;
+            //         } else {
+            //             var arr = new Uint8Array([parseInt(buffer, 16), parseInt(c, 16)]);
+            //             result += decoder.decode(arr);
+            //         }
+            //         nt = "big5";
+            //         break;
+            //         case "dec":
+            //         var val = getIntFrom(c, currentType);
+            //         // var char = encoder.decode(new Uint8Array([0xFD,0xB3,0x47]));
+            //         // var str = char;
+            //         var str = String.fromCharCode(val);
+            //         if(str == ''){
+            //             str = 0;
+            //         }
+            //         result += str + ' ';
+            //         nt = 'char';
+            //         break;
+            //         case "char":
+            //         var val = c;
+            //         var code = getIntFrom(val, currentType);
+            //         result += code.toString(2).toUpperCase().padStart(8, '0') + ' ';
+            //         nt = 'bin';
+            //         break;
+            //         case "bin":
+            //         var val = c;
+            //         var bits = getIntFrom(val, currentType);
+            //         result += bits.toString(16).toUpperCase().padStart(2, '0') + ' ';
+            //         nt = 'hex';
+            //         break;
+            //     }
             }
-            if(!skip){
+            if(nt !== '' && !skip){
                 target.innerHTML = result.trim();
                 target.setAttribute("title", nt);
                 target.setAttribute('data-type', nt);
@@ -274,6 +307,7 @@
             }
             var response = await fetch(repoRoot + path);
             var text = await response.text();
+            text = text.replace(/^\r\n/, '');
             parseHexText(text);
         }
 
