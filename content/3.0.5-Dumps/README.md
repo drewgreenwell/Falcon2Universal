@@ -55,11 +55,13 @@ Last Byte = 0A \n End of packet
 |  En = weak / delicate                      |
 | *FF* **B3 47** *00 00* 80 40 39 | no  | 蛄 |
 |  En = mayfly?? / mole cricket??            |
-|                                 |Fire |    |
+|                                 |Fire | Cn |
 | *FA* **BA 47** *00 D0* 4F 45 5F | -   | 慘 |
 |  En = miserable / tragic        | -   |    |
 | *01* **BB 47** *00* B0 50 45 48 | -   | 腐 |
 |  En = decay / rot / corrupt     | -   |    |
+| *01* **B5 47** *00* 00 A0 40 5D |close| 湟 |
+|  En = radiance of fire          |     |    |
 
 | Last Byte -1                | Last Byte   |
 |-----------------------------|-------------|

@@ -1,3 +1,7 @@
+content/3.0.5-Dumps/Fire_Sensor/falcon-40w-with-air-close-but-no-fire-alarm-rx.txt
+content/3.0.5-Dumps/Fire_Sensor/falcon-40w-with-air-close-but-no-fire-alarm-tx.txt
+content/3.0.5-Dumps/Fire_Sensor/falcon-40w-with-air-fire-and-multi-reset-rx.txt
+content/3.0.5-Dumps/Fire_Sensor/falcon-40w-with-air-fire-and-multi-reset-tx.txt
 content/3.0.5-Dumps/Fire_Sensor/falcon-40w-with-air-fire-and-reset-rx-2.txt
 content/3.0.5-Dumps/Fire_Sensor/falcon-40w-with-air-fire-and-reset-rx-3.txt
 content/3.0.5-Dumps/Fire_Sensor/falcon-40w-with-air-fire-and-reset-rx.txt
