@@ -21,7 +21,7 @@
             background-color: #edeaea;;
         }
         th, td {
-            padding: 1em .5em;
+            padding: .5em .5em;
         }
         .prefix {
             width: 10%;
@@ -29,12 +29,17 @@
         .one-byte {
             width: 2.5%;
         }
-        .data {
-            
+        .data button {
+            background-color: #fff;
+            border-radius: 0;
+            margin-right: .5em;
         }
         td, span {
             position: relative;
             cursor: pointer;
+        }
+        td.data {
+            cursor: default;
         }
         td span { 
             display: inline-block;
@@ -43,11 +48,15 @@
             line-height: 1.25em;
             min-width: 16px;
             min-height: 1.25em;
+            margin-bottom: .25em;
+        }
+        td span:empty {
+            top: .75em;
         }
         td[title]::after, span[title]::after {
             font-size: .75em;
             color: red;
-            content: attr(title);
+            content: attr(data-type);
             background-color: rgb(229, 230, 233);
             position: absolute;
             top: -.75em;
@@ -137,18 +146,22 @@
                 text += `<td class="one-byte" data-type="hex">${col[7]}</td>`;
                 var data = col.slice(8, 8 + len);
                 text += `<td class="data" data-type="hex">`;
+                text += '<button class="skip" onclick="dataClick()">></button>'
                 var buffer = '';
                 for(var j = 0; j < data.length; j++){
-                    // if(j == 1 && data.length == 8){
-                    //     buffer = data[j];
-                    // } else if (j == 2) {
-                    //     // todo: big5
-                    //     var arr = new Uint8Array([parseInt(buffer, 16), parseInt(data[j], 16)]);
-                    //     text += `<span data-type='big5'>${decoder.decode(arr)}</span> `;
-                    //     buffer = '';
-                    // } else {
+                    if(j == 1 && data.length == 8){
+                        if(data[j] != 0x00){
+                            buffer = data[j];
+                        }
+                    } else if (j == 2 && buffer !== '') {
+                        // todo: big5
+                        var arr = new Uint8Array([parseInt(buffer, 16), parseInt(data[j], 16)]);
+                        text += `<span data-type='hex'>${buffer}</span> <span data-type='hex'>${data[j]}</span> `;
+                        text += `<span class='skip' title='The previous two bytes decoded as big5' data-type='big5'>${decoder.decode(arr)}</span> `;
+                        buffer = '';
+                    } else {
                         text += `<span data-type='hex'>${data[j]}</span> `;
-                    //}
+                    }
                 }
                 text += "</td>";
                 var nextByte = 8 + len; 
@@ -162,6 +175,17 @@
 
         function tableClick() {
             var target = event.target;
+            if(target.className !== 'data'){
+                swapElementData(target);
+            }
+        }
+
+        function dataClick(){
+            event.stopPropagation();
+            swapElementData(event.target.parentNode);
+        }
+
+        function swapElementData(target){
             var targetType = target.getAttribute('data-type');
             var className = target.getAttribute('class');
             if(target.nodeName === 'TD') {
@@ -171,7 +195,7 @@
                     var newType = '';
                     for (var i = 0; i < target.childNodes.length; i++) {
                         var node = target.childNodes[i];
-                        if (node.nodeName === 'SPAN') {
+                        if (node.nodeName === 'SPAN' && node.getAttribute('class') !== 'skip') {
                             newType = swapType(node, targetType);
                         }
                     }
