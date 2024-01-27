@@ -133,7 +133,8 @@
             '蛄': { b: 'B3 47', min: -1, max: -1, en: 'mayfly?? / mole cricket?? (air?)' },
             '慘': { b: 'BA 47', min: -1, max: -1, en: 'miserable tragic (fire?)' },
             '腐': { b: 'BB 47', min: -1, max: -1, en: 'decay / rot / corrupt (fire?)' },
-            '湟': { b: 'B5 47', min: -1, max: -1, en: 'radiance of fire / name of river (fire?)' }
+            '湟': { b: 'B5 47', min: -1, max: -1, en: 'radiance of fire / name of river (fire?)' },
+            '廉': { b: 'B7 47', min: -1, max: -1, en: 'inexpensive / honest / incorruptible / wall (air?)' }
         }
         function parseHex(){
             var rows = document.getElementById('hex').value;
@@ -187,7 +188,8 @@
                     }
                 }
                 if(decoded !== ''){
-                    text += '<span class="skip"> En=' + translations[decoded].en + '</span>';
+                    var translation = typeof(translations[decoded]) !== 'undefined' ? translations.decoded.en : '** Unkown Character! **';
+                    text += '<span class="skip"> En=' + translation + '</span>';
                 }
                 text += "</td>";
                 var nextByte = 8 + len; 
