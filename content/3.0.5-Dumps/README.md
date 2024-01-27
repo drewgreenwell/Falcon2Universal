@@ -55,6 +55,10 @@ Last Byte = 0A \n End of packet
 |  En = weak / delicate                      |
 | *FF* **B3 47** *00 00* 80 40 39 | no  | 蛄 |
 |  En = mayfly?? / mole cricket??            |
+| *1B* **B7 47** *00 00* 00 41 DA |updwn| 廉 |
+|  En = cheap / honest / incorruptible / wall|
+| *D5* **BC 47** *00 C0* 36 45 93 |updwn| 嘮 |
+|  En = nag / gossip / chat / chatter        |
 |                                 |Fire | Cn |
 | *FA* **BA 47** *00 D0* 4F 45 5F | -   | 慘 |
 |  En = miserable / tragic        | -   |    |
