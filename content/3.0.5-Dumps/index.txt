@@ -32,6 +32,8 @@ content/3.0.5-Dumps/SD_Card_Empty/falcon-40w-air-min-rx.txt
 content/3.0.5-Dumps/SD_Card_Empty/falcon-40w-air-min-tx-2.txt
 content/3.0.5-Dumps/SD_Card_Empty/falcon-40w-air-min-tx-3.txt
 content/3.0.5-Dumps/SD_Card_Empty/falcon-40w-air-min-tx.txt
+content/3.0.5-Dumps/SD_Card_Empty/falcon-40w-air-min-max-min-max-min-rx.txt
+content/3.0.5-Dumps/SD_Card_Empty/falcon-40w-air-min-max-min-max-min-tx.txt
 content/3.0.5-Dumps/SD_Card_Empty/falcon-40w-air-unplugged-rx-2.txt
 content/3.0.5-Dumps/SD_Card_Empty/falcon-40w-air-unplugged-rx-3.txt
 content/3.0.5-Dumps/SD_Card_Empty/falcon-40w-air-unplugged-rx.txt
