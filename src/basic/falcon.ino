@@ -104,10 +104,10 @@ void loop() {
         // running boot sequence
         bootTimer.loop();
         if(bootTimer.elapsed) {
-          // after the first message there is a larger offset
-          // probably from some processing delay
-          // add 32 milliseconds here to keep things lined up
-          if(bootTimer.tickCount == 1) {
+          // 1 tick from waiting to boot, 1 tick from boot sequence = add offset on 3rd tick
+          if(bootTimer.tickCount == 3) {
+            // after the first boot message there is a larger offset
+            // add ~32 milliseconds here to keep things lined up
             bootTimer.interval += BOOT_BUMP_AMT;
           }
           bootLoop();
