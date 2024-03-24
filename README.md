@@ -21,9 +21,14 @@ In the most basic sense, this code just handshakes with the laser, updates recei
 
 ## In Progress
 
-I have a prototype pcb using the lillygo t-display I am using with the Falcon 2 and FluidNC. [Video](https://www.youtube.com/shorts/gS-xerEGvpA) It features a screen that out puts alarm codes and fire sensor support. I am working on the best way to sense control the 24V power coming in so tha tit goes idle when the laser is not in use (to turn off the fans). The Falcon 2 controller will turn on the fans any time power is sent to a motor or the laser. The T-Display has buttons and a screen to make these options as configurable as possible.
+I have a prototype pcb using the Lillygo T-Display I am using with the Falcon 2 and FluidNC. It features a screen that outputs alarm codes and info and has fire sensor support. I am working on the best way to sense activity from x/y axis to control the 24V power coming in so that it goes idle when the laser is not in use (to turn off the fans). The Falcon 2 controller will turn on the fans any time power is sent to a motor or the laser. The T-Display has buttons and a screen to make these options as configurable as possible.
+
+[Video](https://www.youtube.com/shorts/gS-xerEGvpA)
 
 I am currently working on a smaller footprint for the pcb and a break out cable to allow placement of the display at the controller or laser.
+
+### Falcon Hex Parser
+A way to translate hex dumps into parsed messages. [Falcon Hex Parser](https://htmlpreview.github.io/?https://github.com/drewgreenwell/Falcon2Universal/blob/main/content/parser.html)
 
 
 ## Pinouts
