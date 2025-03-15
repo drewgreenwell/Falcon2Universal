@@ -1,16 +1,24 @@
 class AppTimer {
+  long lastTick = -1;
+  long tickCount = 0;
+  bool hasElapsed = false;
 public:  
     int interval;
     bool active;
     bool repeat;
-    long lastTick = -1;
-    long tickCount = 0;
-    bool elapsed = false;
-
-    AppTimer(int interval, bool active, bool repeat){
+    
+    AppTimer(int interval, bool active, bool repeat) {
       this->interval = interval;
       this->active = active;
       this->repeat = repeat;
+    }
+
+    long ticks() {
+      return tickCount;
+    }
+
+    bool elapsed() {
+      return hasElapsed;
     }
 
     void setup() {
@@ -18,31 +26,31 @@ public:
 
     void loop() {
       if (active) {
-        if(elapsed && !repeat){
+        if(hasElapsed && !repeat){
           return;
         }
-        elapsed = false;
+        hasElapsed = false;
         long now = millis();
         if(lastTick == -1){
           lastTick = now;
         }
         if(now - lastTick > interval) { 
           lastTick = now;
-          elapsed = true;
+          hasElapsed = true;
           tickCount += 1;
         } else {
-          elapsed = false;
+          hasElapsed = false;
         }
       }
     }
 
     void restart() {
-      elapsed = false;
+      hasElapsed = false;
     }
 
     void reset() {
       lastTick = -1;
       tickCount = 0;
-      elapsed = false;
+      hasElapsed = false;
     }
   };
