@@ -1,5 +1,11 @@
+#include "png_support.h"
 #include "Final_Frontier_28.h"
+#include "gear.h"
+
 class AppUi {
+  #ifndef UI_DEBUG
+  #define UI_DEBUG 0
+  #endif
   LaserCommunicator *laser;
   int16_t h = 135;
   int16_t w = 240;
@@ -14,7 +20,8 @@ class AppUi {
   int activeAlarms[14] = {0,1,0,0,0,0,0,0,0,0,0,0,1,0};
 
   public:
-    
+  
+  
   int* getActiveAlarms() {
     return activeAlarms;
   }
@@ -77,7 +84,7 @@ class AppUi {
     if(laser->modelName != ""){
       tft.drawString(laser->modelName, xPos, 10);
     } else {
-      tft.drawString("TEST", xPos, 10);
+      tft.drawString("Handshake..", xPos, 10);
     }
     draw_alarm_codes();
   }
@@ -128,5 +135,50 @@ class AppUi {
     m.deleteSprite();
   }
 
+  void drawGear() {
+    pngType = GEAR;
+    int16_t rc = png.openFLASH((uint8_t *)gear, sizeof(gear), pngDraw);
+    endPng(rc);
+  }
+
+  void endPng(int16_t rc) {
+    uint16_t pngw = 0, pngh = 0; // To store width and height of image
+    if (rc == PNG_SUCCESS) {
+      //Serial.println("Successfully opened png file");
+      pngw = png.getWidth();
+      pngh = png.getHeight();
+      //Serial.printf("Image metrics: (%d x %d), %d bpp, pixel type: %d\n", pngw, pngh, png.getBpp(), png.getPixelType());
+
+      tft.startWrite();
+      uint32_t dt = millis();
+      rc = png.decode(NULL, 0);
+      tft.endWrite();
+      //Serial.print(millis() - dt); Serial.println("ms");
+      tft.endWrite();
+
+      // png.close(); // Required for files, not needed for FLASH arrays
+    }
+  }
+
+  template <typename T>
+  static void log(const T& data) {
+    #if UI_DEBUG
+    Serial.print(data);
+    #endif
+  }
+  template <typename T, typename... Args>
+  static void logf(const char* format, T first, Args... rest) {
+    #if UI_DEBUG
+    static char buffer[256];
+    snprintf(buffer, sizeof(buffer), format, first, rest...);
+    Serial.print(buffer);
+    #endif
+  }
+  template <typename T>
+  static void logln(const T& data) {
+    #if UI_DEBUG
+    Serial.println(data);
+    #endif
+  }
 
 };

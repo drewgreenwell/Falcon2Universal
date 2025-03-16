@@ -1,7 +1,7 @@
 class LaserCommunicator {
 
   #ifndef LASER_DEBUG
-  #define LASER_DEBUG false
+  #define LASER_DEBUG 0
   #endif
 
   // boot sequence
@@ -51,8 +51,11 @@ class LaserCommunicator {
   int lastMessageReceived = 0;          // timer to record amount of time since last message received
   int idleTimeout = 5000;               // number of milliseconds without communication from laser before resetting boot
 
-  // HardwareSerial SerialPort;
-  AppTimer bootTimer = AppTimer(DEFAULT_BOOT_DELAY, true, true);                   // timer to track bootDelay / bootInterval
+  long delayedAt = 0;                   // async delay millis()
+  int delayedFor = 0;                   // amount of time to delay loop execution
+  bool delayedProcessing = false;       // used to indicate whether a delay is from message proccesing
+
+  AppTimer bootTimer = AppTimer(DEFAULT_BOOT_DELAY, true, true);  // timer to track bootDelay / bootInterval
   HardwareSerial *LaserSerial;
 
   public:
@@ -85,6 +88,13 @@ class LaserCommunicator {
 
   void loop() {
     long now = millis();
+    if(delayedFor > 0){
+      if(now - delayedAt > delayedFor){
+        delayedFor = 0;
+      } else {
+        return;
+      }
+    }
     // check if we need to start booting
     if(!booted) {
       // once input has been recived start timing
@@ -113,19 +123,28 @@ class LaserCommunicator {
         // waiting for input to start boot sequence
       }
     } else {
-      // no message has been revceived in enough time to assume laser is off 
+      // no message has been received in enough time to assume laser is off 
       if(now - lastMessageReceived > idleTimeout) {
         resetBoot();
       }
     }
     // if we have processed a message, update it and echo back the new message after a short delay
-    if(messageReceived){
-      delay(30);
-      handleMessage();
-      messageReceived = false;
-      lastWaitTick = now;
-    } 
-    checkSerial();
+    if(messageReceived) {
+      if(delayedProcessing)
+      {
+        handleMessage();
+        delayedProcessing = false;
+        messageReceived = false;
+        lastWaitTick = now;
+      } else {
+        delayedProcessing = true;
+        delayFor(30);
+      }
+    }
+    // check for a new message unless we are waiting to handle a message
+    if(!delayedProcessing) {
+      checkSerial();
+    }
   }
 
   // check for communication and start parsing
@@ -208,11 +227,11 @@ class LaserCommunicator {
         }
       }
     }
-    Serial.print("RX ");
-    Serial.print(rxIdxVal);
-    Serial.print(" Parsed String Length: ");
-    Serial.println(inputData.length);
-    Serial.println(inputString);
+    log("RX ");
+    log(rxIdxVal);
+    log(" Parsed String Length: ");
+    logln(inputData.length);
+    logln(inputString);
   }
 
   void handleMessage(){
@@ -264,7 +283,12 @@ class LaserCommunicator {
     if(txIdxVal > 255){
       txIdxVal = 0;
     }
-    delay(30);
+    delayFor(30);
+  }
+
+  void delayFor(int amt){
+    delayedFor = amt;
+    delayedAt = millis();
   }
 
   // restart timings and counts for boot loop
@@ -310,14 +334,21 @@ class LaserCommunicator {
   }
 
   template <typename T>
-  void log(const T& data) {
+  static void log(const T& data) {
     #if LASER_DEBUG
     Serial.print(data);
     #endif
   }
-
+  template <typename T, typename... Args>
+  static void logf(const char* format, T first, Args... rest) {
+    #if LASER_DEBUG
+    static char buffer[256];
+    snprintf(buffer, sizeof(buffer), format, first, rest...);
+    Serial.print(buffer);
+    #endif
+  }
   template <typename T>
-  void logln(const T& data) {
+  static void logln(const T& data) {
     #if LASER_DEBUG
     Serial.println(data);
     #endif
