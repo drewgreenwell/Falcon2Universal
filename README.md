@@ -21,11 +21,10 @@ In the most basic sense, this code just handshakes with the laser, updates recei
 
 ## In Progress
 
-I have a prototype pcb using the Lillygo T-Display I am using with the Falcon 2 and FluidNC. It features a screen that outputs alarm codes and info and has fire sensor support. I am working on the best way to sense activity from x/y axis to control the 24V power coming in so that it goes idle when the laser is not in use (to turn off the fans). The Falcon 2 controller will turn on the fans any time power is sent to a motor or the laser. The T-Display has buttons and a screen to make these options as configurable as possible.
+Version 2 of the PCB has arrived and parts are trickling in. I am using the current version with the Falcon 2 40W and FluidNC running on an MKS DLC32. The adapter will let you run the Falcon lasers on any laser or CNC setup you have that supports a 3 pin 24V laser. The adapter features a screen that outputs alarm codes and laser info and has fire sensor support. WiFi Portal and OTA are currently in progress. I am also working on the best way to sense activity from x/y axis to control the 24V power to the laser so that I can put it in idle mode (no fans) when the laser is not in use. Note: I have currently settled on allowing wake on laser pulse or manual sleep/wake of the laser with plans for this to be configurable. The Falcon 2 controller will turn on the fans any time power is sent to a motor or the laser, this is controlled by the Falcon 2 controller. Perhaps an accelerometer or gyroscope is a good option here as well. The T-Display has buttons and a screen to make these options as configurable as possible.
 
 [Video](https://www.youtube.com/shorts/gS-xerEGvpA)
 
-I am currently working on a smaller footprint for the pcb and a break out cable to allow placement of the display at the controller or laser.
 
 ### Falcon Hex Parser
 A way to translate hex dumps into parsed messages. [Falcon Hex Parser](https://htmlpreview.github.io/?https://github.com/drewgreenwell/Falcon2Universal/blob/main/content/parser.html)
