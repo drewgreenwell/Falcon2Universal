@@ -59,6 +59,12 @@ class LaserCommunicator {
   HardwareSerial *LaserSerial;
 
   public:
+  // these 4 fields are managed by the ui
+  float laserVoltage = 0;
+  uint16_t laserVal = 0;
+  unsigned long lastLaserChange = 0;
+  uint8_t laserState = 0;
+
   String modelName;
   // parsed-ish version of inputData for serial debug
   String inputString;

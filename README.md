@@ -18,6 +18,7 @@ The current basic example is confirmed working with the latest firmware for the 
 
 In the most basic sense, this code just handshakes with the laser, updates received packets, and echos them back to the laser.
 
+Falcon Screen is a functional UI for the adapter based on the LilyGo T Display. It enables configurable sleep / wake of the fans, alarm code /laser monitoring, and fire alaram output. It is geared to work on the adapter but will install and run fine on a T Display without the adapter board.
 
 ## In Progress
 
