@@ -1,6 +1,5 @@
 // global ui variables todo: migrate
-// todo use sprites
-#define MAX_IMAGE_WIDTH 240 // Sets rendering line buffer lengths, adjust for your images
+#define MAX_IMAGE_WIDTH 240 // Sets rendering line buffer lengths
 enum PngType { SPLASH_PNG, GEAR_PNG, LOGO_PNG, BEAM_PNG, BEAM_BW_PNG, BEAM_INACTIVE_PNG };
 PngType pngType = GEAR_PNG;
 int16_t gearX = 40;
@@ -17,7 +16,7 @@ int16_t beamY = 47;
   //====================================================================================
   // This function will be called during decoding of the png file to render each image
   // line to the TFT. PNGdec generates the image line and a 1bpp mask.
-  void pngDraw(PNGDRAW *pDraw) {
+ /* void pngDraw(PNGDRAW *pDraw) {
     uint16_t lineBuffer[MAX_IMAGE_WIDTH];          // Line buffer for rendering
     uint8_t  maskBuffer[1 + MAX_IMAGE_WIDTH / 8];  // Mask buffer
 
@@ -50,4 +49,4 @@ int16_t beamY = 47;
       // Note: pushMaskedImage is for pushing to the TFT and will not work pushing into a sprite
       tft.pushMaskedImage(x, y + pDraw->y, pDraw->iWidth, 1, lineBuffer, maskBuffer);
     }
-  }
+  }*/

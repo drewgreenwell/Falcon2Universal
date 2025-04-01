@@ -6,14 +6,16 @@ class AppOta {
   #endif
 
   AsyncWebServer *WebServer;
+   Preferences *AppPreferences;
 
   public:
   // todo: this will be populated by wifi portal
   const char* ssid = "";
   const char* password = "";
   
-  AppOta(AsyncWebServer *webServer) {
+  AppOta(AsyncWebServer *webServer, Preferences *preferences) {
     this->WebServer = webServer;
+    this->AppPreferences = preferences;
   }
   
   void setup() {
@@ -24,9 +26,9 @@ class AppOta {
       delay(500);
       Serial.print(".");
     }
-  WebServer->on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
+  WebServer->on("/", HTTP_GET, [&](AsyncWebServerRequest* request) {
     String body = String("Falcon 2 Universal Version: ");
-    body.concat(prefs.getString("version"));
+    body.concat(AppPreferences->getString("version"));
     request->send(200, "text/plain", body);
   });
   WebServer->begin();

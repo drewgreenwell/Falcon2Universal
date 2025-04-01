@@ -5,73 +5,81 @@
 #define LASER_TRIGGER_PIN 2
 #define LASER_MONITOR_PIN 15
 #define LASER_ALARM_PIN 27
+#define LASER_STATE_ON_BOOT LOW // LOW for fans powered down by default, HIGH for fans on
+
+#define BTN1_PIN 35
+#define BTN2_PIN 0
 
 #define APP_DEBUG 1
 #define UI_DEBUG 1
 #define LASER_DEBUG 1
 #define OTA_DEBUG 1
 
-#define UI_TESTING 1
+#define UI_TESTING 1              // flag for testing ui states
+
+#define BAUD_RATE 9600
+
+#define CONFIG_TFT_SMOOTH_FONT
+//#define SMOOTH_FONT
+#define FS_NO_GLOBALS
 
 /*
   Network
 */
 #include <WiFi.h>
-//#include <WiFiManager.h> // too heavy
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-AsyncWebServer server(80);
-
 #include <Preferences.h>
+#include <HardwareSerial.h>
+#include <FS.h>
+#include <TFT_eSPI.h> 
+#include <SPI.h>
+#include <PNGdec.h>
+#include <Button2.h>
+/*
+  Common Utility Classes
+*/
+#include "list.hpp"
+#include "timer.hpp"
+
+#include "app_ota.hpp"
+#include "laser_communicator.hpp"
+#include "app_ui.hpp"
+
+AsyncWebServer server(80);
 Preferences prefs;
 
 /*
   OTA
 */
-#include "app_ota.hpp";
-AppOta ota(&server);
+AppOta ota(&server, &prefs);
 
 /*
   Secondary Serial Port for Communicating with Laser
 */
-#include <HardwareSerial.h>
-#define BAUD_RATE 9600
+
+
 HardwareSerial SerialPort(2);
 
-/*
-  Common Utility Classes
-*/
-#include "list.hpp";
-#include "timer.hpp";
 
 /* 
   Laser Config
 */
-#define LASER_STATE_ON_BOOT LOW // LOW for fans powered down by default, HIGH for fans on
-#include "laser_communicator.hpp";
 LaserCommunicator laser(&SerialPort);
 
 /*
   LilyGO T-Display
 */
-#define CONFIG_TFT_SMOOTH_FONT
-//#define SMOOTH_FONT
-#define FS_NO_GLOBALS
-#include <FS.h>
-#include <TFT_eSPI.h> 
-#include <SPI.h>
-TFT_eSPI tft = TFT_eSPI();
 
-#include <PNGdec.h>
+TFT_eSPI display = TFT_eSPI();
+
+
 PNG png; // PNG decoder instance
 
-#define GREY 0xCCCCCC
-#include "app_ui.hpp"
-AppUi ui(&laser);
 
-#include <Button2.h>
-#define BTN1_PIN 35
-#define BTN2_PIN 0
+AppUi ui = AppUi::init(&laser, &png, &display);
+AppUi* AppUi::instance = &ui;
+
 Button2 button1;
 Button2 button2;
 
@@ -93,13 +101,6 @@ void setup() {
   laser.setup();
   
   app_setup();
-
-  //if (!SPIFFS.begin()) {
-    //  logln("SPIFFS initialisation failed!");
-      // while (1) yield(); // Stay here twiddling thumbs waiting
-   // }
-
-  //listDir(SPIFFS, "/", true);
 
   ui.setup();
 
@@ -132,7 +133,7 @@ void app_setup() {
   pinMode(LASER_TRIGGER_PIN, OUTPUT);
   laser.laserState = prefs.getUChar("laser-boot", LASER_STATE_ON_BOOT);
   digitalWrite(LASER_TRIGGER_PIN, laser.laserState);
-  // set alarm pin to output, pulled high by external resistor
+  // set alarm pin to output
   pinMode(LASER_ALARM_PIN, OUTPUT);
   // set laser monitor to input to monitor laser pulses
   pinMode(LASER_MONITOR_PIN, INPUT);
@@ -200,46 +201,6 @@ void click2(Button2& b) {
     } else {
       logln("Button 2 Press");
     }
-}
-
-void listDir(fs::FS &fs, const char * dirname, uint8_t levels) {
-  Serial.printf("Listing directory: %s\n", dirname);
-
-  fs::File root = fs.open(dirname);
-  if (!root) {
-    Serial.println("Failed to open directory");
-    return;
-  }
-  if (!root.isDirectory()) {
-    Serial.println("Not a directory");
-    return;
-  }
-
-  fs::File file = root.openNextFile();
-  while (file) {
-
-    if (file.isDirectory()) {
-      Serial.print("DIR : ");
-      String fileName = file.name();
-      Serial.print(fileName);
-      if (levels) {
-        listDir(fs, file.name(), levels - 1);
-      }
-    } else {
-      String fileName = file.name();
-      Serial.print("  " + fileName);
-      int spaces = 32 - fileName.length(); // Tabulate nicely
-      if (spaces < 1) spaces = 1;
-      while (spaces--) Serial.print(" ");
-      String fileSize = (String) file.size();
-      spaces = 8 - fileSize.length(); // Tabulate nicely
-      if (spaces < 1) spaces = 1;
-      while (spaces--) Serial.print(" ");
-      Serial.println(fileSize + " bytes");
-    }
-
-    file = root.openNextFile();
-  }
 }
 
 template <typename T>
