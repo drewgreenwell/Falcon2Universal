@@ -78,7 +78,6 @@ PNG png; // PNG decoder instance
 
 
 AppUi ui = AppUi::init(&laser, &png, &display);
-AppUi* AppUi::instance = &ui;
 
 Button2 button1;
 Button2 button2;

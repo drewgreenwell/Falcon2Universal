@@ -1,7 +1,3 @@
-#define UI_FONT_SMALL NotoSansBold15      // smaller ui font (messaging)
-#define UI_FONT_LARGE NotoSansMonoScb20   // larger UI font (header)
-#define GREY 0xCCCCCC
-
 #include "ui_support.h"                   // global png decode / screen positioning
 #include "ui_font.h"
 // images
@@ -45,11 +41,12 @@ class AppUi {
     this->laser = laser;
     this->pngDecoder = png;
     this->tft = display;
+    AppUi::instance = this;
   }
 
   public:
 
-  static AppUi* instance;
+  static inline AppUi* instance = nullptr;
   
   static AppUi init(LaserCommunicator *laser, PNG *png, TFT_eSPI *display) {
     AppUi appUi = AppUi(laser, png, display);
@@ -366,4 +363,3 @@ class AppUi {
   }
 
 };
-//AppUi* AppUi::instance = nullptr;

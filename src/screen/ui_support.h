@@ -1,4 +1,7 @@
 // global ui variables todo: migrate
+#define UI_FONT_SMALL NotoSansBold15      // smaller ui font (messaging)
+#define UI_FONT_LARGE NotoSansMonoScb20   // larger UI font (header)
+#define GREY 0xCCCCCC
 #define MAX_IMAGE_WIDTH 240 // Sets rendering line buffer lengths
 enum PngType { SPLASH_PNG, GEAR_PNG, LOGO_PNG, BEAM_PNG, BEAM_BW_PNG, BEAM_INACTIVE_PNG };
 PngType pngType = GEAR_PNG;
