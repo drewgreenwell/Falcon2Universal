@@ -6,7 +6,6 @@
 #include "laser-beam.h"                   // laser/fans awake with an active beam
 #include "laser-beam-inactive.h"          // laser/fans awake with no active beam
 #include "laser-beam-bw.h"                // laser/fans asleep
-#include "logo.h"                         // Falcon Universal in Futura
 
 class AppUi {
   #ifndef UI_DEBUG
@@ -15,29 +14,31 @@ class AppUi {
   LaserCommunicator *laser;
   PNG *pngDecoder;
   TFT_eSPI *tft;
-  int16_t h = 135;
-  int16_t w = 240;
-  int alarmX = 0;
-  int alarmY = h - 32;
+  AppTimer uiTimer = AppTimer(100, true, true); // delay, active, repeat
+  int16_t screenHeight = 135;
+  int16_t screenWidth = 240;
   int activeAlarmsLen = 2;
   int alarmLen = 14;
-  int uiTick = 0;
-  int uiRate = 1000;
-  int waitTicks = 0;
+  
+  int waitTicks = 0;  // ellipsis 
   int alarms[14] = {1,2,4,5,6,7,8,9,10,11,12,13,14,15};
   int activeAlarms[14] = {0,1,0,0,0,0,0,0,0,0,0,0,1,0};
-
 
   bool modelNameWritten = false;  // has the modelName been drawn on the screen, a delay in handshake may leave this blank the first couple loops
 
   enum View { SPLASH, WAITING, BOOTING, BOOTED, CONFIG, NONE };
   View view = SPLASH;
+  #if !UI_TESTING
   View lastView = SPLASH;
+  #else
+  View lastView = BOOTING;
+  #endif
+  int lastState = -1;  // last laser state 0 off, 1 inactive, 2 active
   
   uint8_t defaultFontId = 0;
   uint8_t largeFontId = 0;
 
-  AppUi(LaserCommunicator *laser, PNG *png, TFT_eSPI *display) {
+  AppUi(LaserCommunicator *laser, PNG *png, TFT_eSPI *display) {//}: spr(display) {
     this->laser = laser;
     this->pngDecoder = png;
     this->tft = display;
@@ -46,7 +47,7 @@ class AppUi {
 
   public:
 
-  static inline AppUi* instance = nullptr;
+  static inline AppUi* instance = nullptr;  // static instance for png decoding to reference
   
   static AppUi init(LaserCommunicator *laser, PNG *png, TFT_eSPI *display) {
     AppUi appUi = AppUi(laser, png, display);
@@ -60,33 +61,30 @@ class AppUi {
   void setup() {
     tft->init();
     tft->setRotation(3);
-    //tft->loadFont(AA_FONT);
-    //tft->setFreeFont(UI_FONT);
-
+    tft->fillScreen(TFT_WHITE);
+    drawSplash();
   }
 
   void loop() {
-    long now = millis();
-    if(now - uiTick > uiRate){
-      uiTick = now;
+    uiTimer.loop();
+    if(uiTimer.elapsed()) {
       bool laserBooted = laser->hasBooted();
       bool waitingToBoot = laser->isWaitingToBoot();
 #if UI_TESTING
       view = BOOTED;
-      lastView = BOOTING;
       laserBooted = true;
       waitingToBoot = false;
 #endif
       if(!laserBooted){
         if(waitingToBoot){
-          if(view == WAITING && lastView == WAITING){
-            // return;
+          if(view == WAITING && lastView == WAITING) {
             waitTicks += 1;
             if(waitTicks > 3){
               waitTicks = 0;
             }
           }
           view = WAITING;
+          logln("waiting");
           waiting_ui_update();
         }else {
           if(view == BOOTING && lastView == BOOTING){
@@ -104,7 +102,7 @@ class AppUi {
   }
   
   void prep_ui_update() {
-    tft->fillScreen(TFT_WHITE);  
+    tft->fillScreen(TFT_WHITE); 
     tft->setTextWrap(false);
     tft->setTextColor(TFT_BLACK, TFT_WHITE);
   }
@@ -114,71 +112,44 @@ class AppUi {
       prep_ui_update();
       drawSplash();
     }
-    //tft->setTextPadding(w / alarmLen / 2);
-    tft->setTextSize(2);
-    tft->loadFont(UI_FONT_SMALL);
     String msg("WAITING");
     int amt = waitTicks;
     while(amt--){
       msg.concat(String("."));
     }
-    tft->fillRect(90, h * .65, 150, 30, TFT_WHITE);
-    tft->drawString(msg, 90, h * .65);
+    drawString(msg.c_str(), bootingX, bootingY, bootingW, bootingH, TC_DATUM, 2, UI_FONT_SMALL);
   }
 
   void boot_ui_update() {
     prep_ui_update();
     drawSplash();
-    //tft->setTextPadding(w / alarmLen / 2);
-    tft->loadFont(UI_FONT_SMALL);
-    tft->setTextSize(2);
-    tft->drawString("BOOTING", 90, h * .65);
+    drawString("BOOTING", bootingX, bootingY, bootingW, bootingH, TC_DATUM, 2, UI_FONT_SMALL);
   }
 
   void ui_update() {
     if(lastView != BOOTED){
       prep_ui_update();
-      drawLogo();
-      drawVersion();
       modelNameWritten = false;
     }
-
     if(!modelNameWritten) {
-      tft->loadFont(UI_FONT_LARGE);
-      tft->setTextDatum(TC_DATUM);
-      tft->setTextSize(1);
       if(laser->modelName != "") {
-        tft->drawString(laser->modelName, w / 2, 10);
+        drawString(laser->modelName.c_str(), modelX, modelY, modelW, modelH, TC_DATUM, 2, UI_FONT_LARGE);
         modelNameWritten = true;
       } else {
-        tft->drawString("--", w / 2, 10);
+        drawString("Receiving Data", modelX, modelY, modelW, modelH, TC_DATUM, 2, UI_FONT_LARGE);
       }
-      tft->setTextDatum(TL_DATUM);
     }
     
-    #if !UI_TESTING
     drawBeam();
-    #else
-    waitTicks += 1;
-    if(waitTicks % 3 == 0) {
-      drawBeamInactive();
-    } else if(waitTicks % 2 == 0) {
-      drawBeamNoPower();
-    } else {
-      drawBeamActive();
-    }
-    if(waitTicks > 12){
-      waitTicks = 0;
-    }
-    #endif
-
+    drawVersion();
     draw_alarm_codes();
+    
   }
 
   void draw_alarm_codes() {
-    tft->unloadFont();
-    tft->setTextSize(2);
-    tft->drawString("Air", 100, h * .65);
+    String str("Air ");
+    str.concat(millis());
+    drawString(str.c_str(), alarmX, alarmY, alarmW, alarmH, TC_DATUM, 2, UI_FONT_LARGE);
     return;
     tft->setTextSize(3);
     for(int i = 0; i < alarmLen; i++){
@@ -186,11 +157,11 @@ class AppUi {
       int y;
       float half = alarmLen / 2;
       if(i < half){
-        x = i * ( w / half) + 10;
-        y = h - 62;
+        x = i * ( screenWidth / half) + 10;
+        y = screenHeight - 62;
       } else {
-        x = (i - half) * (w / half) + 5;
-        y = h - 22;
+        x = (i - half) * (screenWidth / half) + 5;
+        y = screenHeight - 22;
         if(alarms[i] == 9) // start of second row (single digit)
         {
           x += 5;
@@ -210,27 +181,30 @@ class AppUi {
   }
 
   void drawVersion() {
-    tft->unloadFont();
-    tft->setTextSize(1);
-    tft->setTextColor(TFT_BLACK);
     String version("v");
     version.concat(APP_VERSION);
-    tft->drawString(version, 180, h * .9);
+    drawString(version.c_str(), versionX, versionY, versionW, versionH);
   }
 
-  void setMessage(const char *msg) {
+  void drawString(const char *msg, int x, int y, int width, int height, uint8_t datum = TL_DATUM, int fontSize = 1, const uint8_t font[] = nullptr) {
     TFT_eSprite m = TFT_eSprite(tft);
     m.setColorDepth(8);
-    m.createSprite(w, 24);
+    m.createSprite(width, height);
     m.fillSprite(TFT_WHITE);
-
-    m.setTextFont(1);
-    m.setTextDatum(TL_DATUM);
+    if(font != nullptr) {
+      m.loadFont(font);
+    } else {
+      m.setTextFont(1);
+    }
+    m.setTextSize(fontSize);
+    m.setTextDatum(datum);
     m.setTextColor(TFT_BLACK);
-    m.setCursor(0, 0);
-    m.print(msg);
-
-    m.pushSprite(0, 10);
+    double sx = 0;
+    if(datum == TC_DATUM){
+      sx = width / 2;
+    }
+    m.drawString(msg, sx, 0);
+    m.pushSprite(x, y);
     m.deleteSprite();
   }
 
@@ -247,40 +221,52 @@ class AppUi {
     drawVersion();
   }
 
-  void drawLogo() {
-    // todo: getting some artifacts at the edge on this image
-    /*pngType = LOGO_PNG;
-    tft->fillRect(logoX, logoY, logoW, logoH, TFT_WHITE);
-    int16_t rc = pngDecoder->openFLASH((uint8_t *)logo, sizeof(logo), pngDraw);
-    endPng(rc);*/
-  }
-
+bool again = false;
   void drawBeam() {
     if (laser->laserState == HIGH){
       if(laser->laserVal > 0){
+        if(lastState == 2){
+          return;
+        }
         drawBeamActive();
+        lastState = 2;
       } else {
+        if(lastState == 1){
+          return;
+        }
         drawBeamInactive();
+        lastState = 1;
       }
     } else {
+      if(lastState == 0) {
+        if(again) {
+            return;
+          }
+          again = true;
+      }
       drawBeamNoPower();
+      lastState = 0;
     }
   }
 
   void drawBeamActive() {
+    logln("beam active");
     pngType = BEAM_PNG;
+    //int16_t rc = drawImage(laser_beam, sizeof(laser_beam), beamX, beamY);
     int16_t rc = pngDecoder->openFLASH((uint8_t *)laser_beam, sizeof(laser_beam), pngDraw);
     endPng(rc);
   }
-
+  
   void drawBeamInactive() {
     pngType = BEAM_INACTIVE_PNG;
+    //int16_t rc = drawImage(laser_beam_inactive,  sizeof(laser_beam_inactive), beamX, beamY);
     int16_t rc = pngDecoder->openFLASH((uint8_t *)laser_beam_inactive, sizeof(laser_beam_inactive), pngDraw);
     endPng(rc);
   }
 
   void drawBeamNoPower() {
     pngType = BEAM_BW_PNG;
+    //int16_t rc = drawImage(laser_beam_bw,  sizeof(laser_beam_bw), beamX, beamY);
     int16_t rc = pngDecoder->openFLASH((uint8_t *)laser_beam_bw, sizeof(laser_beam_bw), pngDraw);
     endPng(rc);
   }
@@ -288,7 +274,7 @@ class AppUi {
   static void pngDraw(PNGDRAW *pDraw) {
     uint16_t lineBuffer[MAX_IMAGE_WIDTH];          // Line buffer for rendering
     uint8_t  maskBuffer[1 + MAX_IMAGE_WIDTH / 8];  // Mask buffer
-
+    //logln(String("PngDraw");
     AppUi::instance->pngDecoder->getLineAsRGB565(pDraw, lineBuffer, PNG_RGB565_BIG_ENDIAN, 0xffffffff);
 
     if (AppUi::instance->pngDecoder->getAlphaMask(pDraw, maskBuffer, 255)) {
@@ -317,27 +303,17 @@ class AppUi {
       }
       // Note: pushMaskedImage is for pushing to the TFT and will not work pushing into a sprite
       AppUi::instance->tft->pushMaskedImage(x, y + pDraw->y, pDraw->iWidth, 1, lineBuffer, maskBuffer);
+    } else {
+      Serial.println('failed to get alpha mask!');
     }
   }
 
-  
-
   void endPng(int16_t rc) {
-    uint16_t pngw = 0, pngh = 0; // To store width and height of image
     if (rc == PNG_SUCCESS) {
-      //Serial.println("Successfully opened png file");
-      pngw = pngDecoder->getWidth();
-      pngh = pngDecoder->getHeight();
-      //Serial.printf("Image metrics: (%d x %d), %d bpp, pixel type: %d\n", pngw, pngh, pngDecoder->getBpp(), pngDecoder->getPixelType());
-
       tft->startWrite();
-      uint32_t dt = millis();
       rc = pngDecoder->decode(NULL, 0);
       tft->endWrite();
-      //Serial.print(millis() - dt); Serial.println("ms");
-      tft->endWrite();
-
-      // pngDecoder->close(); // Required for files, not needed for FLASH arrays
+      tft->endWrite();     
     }
   }
 
@@ -363,3 +339,170 @@ class AppUi {
   }
 
 };
+// todo: a shared sprite for the whole screen might be a better option but this is pretty flaky
+ /*
+ int16_t drawImage(const byte img[], size_t imgSize, int x, int y) {
+    logln("draw image");
+    //logln(esp_get_free_heap_size());
+    int16_t rc = pngDecoder->openFLASH((uint8_t *)img, imgSize, pngDrawSprite);
+    log("result ");
+    logln(rc);
+    return rc;
+  }
+ static void pngDrawSprite(PNGDRAW *pDraw) {
+    uint16_t lineBuffer[MAX_IMAGE_WIDTH];          // Line buffer for rendering
+    uint8_t  maskBuffer[1 + MAX_IMAGE_WIDTH / 8];  // Mask buffer
+    logln("PngDrawSprite");
+    AppUi::instance->pngDecoder->getLineAsRGB565(pDraw, lineBuffer, PNG_RGB565_BIG_ENDIAN, 0xffffffff);
+
+    if (AppUi::instance->pngDecoder->getAlphaMask(pDraw, maskBuffer, 255)) {
+      int16_t x = 0;
+      int16_t y = 0;
+      int16_t h = 60;
+      int16_t w = 60;
+      switch(pngType){
+        case SPLASH_PNG:
+        x = 0;
+        y = 0;
+        h = 135;
+        w = 240;
+        break;
+        case LOGO_PNG:
+        x = logoX;
+        y = logoY;
+        h = logoH;
+        w = logoW;
+        break;
+        case BEAM_PNG:
+        case BEAM_BW_PNG:
+        case BEAM_INACTIVE_PNG:
+        x = beamX;
+        y = beamY;
+        h = beamH;
+        w = beamW;
+        break;
+        case GEAR_PNG:
+        default:
+        x = gearX;
+        y = gearY;
+        break;
+      }
+        String message("pushmask at x: ");
+        message.concat(x);
+        message.concat(" y: ");
+        message.concat(y + pDraw->y);
+        logln(message);
+        AppUi::instance->pushMaskedImageToSprite(0, pDraw->y, pDraw->iWidth, 1, lineBuffer, maskBuffer, x, y, w, h);
+      //}
+    } else {
+      Serial.println('failed to get alpha mask!');
+    }
+  }
+
+  void pushMaskedImageToSprite(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t *img, uint8_t *mask, int posX, int posY, int sw, int sh)
+  {
+    String msg = String("Push at x: ");
+    msg.concat(posX);
+    msg.concat(" y: ");
+    msg.concat(posY);
+    msg.concat(" w: ");
+    msg.concat(sw);
+    msg.concat(" h: ");
+    msg.concat(sh);
+    logln(msg);
+    TFT_eSprite m = TFT_eSprite(tft);
+    logln("sprite created");
+    m.setColorDepth(8);
+    m.createSprite(sw, sh);
+    m.fillSprite(TFT_WHITE);
+
+    uint8_t  *mptr = mask;
+    uint8_t  *eptr = mask + ((w + 7) >> 3);
+    uint16_t *iptr = img;
+    uint32_t setCount = 0;
+    logln("start loop");
+    // For each line in the image
+    while (h--) {
+      uint32_t xp = 0;
+      uint32_t clearCount = 0;
+      uint8_t  mbyte= *mptr++;
+      uint32_t bits  = 8;
+      // Scan through each byte of the bitmap and determine run lengths
+      do {
+        setCount = 0;
+
+        //Get run length for clear bits to determine x offset
+        while ((mbyte & 0x80) == 0x00) {
+          // Check if remaining bits in byte are clear (reduce shifts)
+          if (mbyte == 0) {
+            clearCount += bits;      // bits not always 8 here
+            if (mptr >= eptr) break; // end of line
+            mbyte = *mptr++;
+            bits  = 8;
+            continue;
+          }
+          mbyte = mbyte << 1; // 0's shifted in
+          clearCount ++;
+          if (--bits) continue;;
+          if (mptr >= eptr) break;
+          mbyte = *mptr++;
+          bits  = 8;
+        }
+
+        //Get run length for set bits to determine render width
+        while ((mbyte & 0x80) == 0x80) {
+          // Check if all bits are set (reduces shifts)
+          if (mbyte == 0xFF) {
+            setCount += bits;
+            if (mptr >= eptr) break;
+            mbyte = *mptr++;
+            //bits  = 8; // NR, bits always 8 here unless 1's shifted in
+            continue;
+          }
+          mbyte = mbyte << 1; //or mbyte += mbyte + 1 to shift in 1's
+          setCount ++;
+          if (--bits) continue;
+          if (mptr >= eptr) break;
+          mbyte = *mptr++;
+          bits  = 8;
+        }
+
+        // A mask boundary or mask end has been found, so render the pixel line
+        if (setCount) {
+          xp += clearCount;
+          clearCount = 0;
+          String msg("pushing at: ");
+          msg.concat((x + xp));
+          msg.concat(" y: ");
+          msg.concat(y);
+          Serial.println(msg);
+          m.pushImage(x + xp, y, setCount, 1, iptr + xp);      // pushImage handles clipping
+          xp += setCount;
+        }
+      } while (setCount || mptr < eptr);
+
+      y++;
+      iptr += w;
+      eptr += ((w + 7) >> 3);
+    }
+   //m.pushSprite(posX, posY);
+   //pngDecoder->decode(NULL, 0);
+   endSprite(0, &m, posX, posY);
+   //m.deleteSprite();
+   logln("Pushed");
+  }
+  
+
+  void endSprite(int16_t rc, TFT_eSprite *sprite, int x, int y) {
+     uint16_t pngw = 0, pngh = 0; // To store width and height of image
+    if (rc == PNG_SUCCESS) {
+      logln("Successfully opened png file");
+      pngw = pngDecoder->getWidth();
+      pngh = pngDecoder->getHeight();
+      logf("Image metrics: (%d x %d), %d bpp, pixel type: %d\n", pngw, pngh, pngDecoder->getBpp(), pngDecoder->getPixelType());
+      rc = pngDecoder->decode(NULL, 0);
+      //delay(100);
+    }
+    sprite->pushSprite(x,y);
+    sprite->deleteSprite();
+  }*/

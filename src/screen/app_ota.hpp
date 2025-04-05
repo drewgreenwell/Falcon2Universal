@@ -9,7 +9,9 @@ class AppOta {
    Preferences *AppPreferences;
 
   public:
-  // todo: this will be populated by wifi portal
+  
+  bool polling = false;
+
   const char* ssid = "";
   const char* password = "";
   
@@ -19,6 +21,13 @@ class AppOta {
   }
   
   void setup() {
+
+  }
+  void begin() {
+    if(polling){
+      return;
+    }
+    polling = true;
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
 
@@ -76,7 +85,9 @@ class AppOta {
   }
 
   void loop() {
-    ArduinoOTA.handle();
+    if(polling) {
+      ArduinoOTA.handle();
+    }
   }
 
   void end() {
@@ -84,6 +95,7 @@ class AppOta {
     ArduinoOTA.end();
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF);
+    polling = false;
   }
 
   template <typename T>

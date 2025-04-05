@@ -15,7 +15,7 @@
 #define LASER_DEBUG 1
 #define OTA_DEBUG 1
 
-#define UI_TESTING 1              // flag for testing ui states
+#define UI_TESTING 1            // flag for testing ui states
 
 #define BAUD_RATE 9600
 
@@ -57,8 +57,6 @@ AppOta ota(&server, &prefs);
 /*
   Secondary Serial Port for Communicating with Laser
 */
-
-
 HardwareSerial SerialPort(2);
 
 
@@ -71,11 +69,8 @@ LaserCommunicator laser(&SerialPort);
   LilyGO T-Display
 */
 
-TFT_eSPI display = TFT_eSPI();
-
-
 PNG png; // PNG decoder instance
-
+TFT_eSPI display = TFT_eSPI();
 
 AppUi ui = AppUi::init(&laser, &png, &display);
 
@@ -96,16 +91,14 @@ void setup() {
   Serial.begin(BAUD_RATE); 
   // serial to laser
   SerialPort.begin(BAUD_RATE, SERIAL_8N1, LASER_RX_PIN, LASER_TX_PIN);  
-  
+  logln("Setting up laser");
   laser.setup();
-  
+  logln("Setting up app");
   app_setup();
-
+  logln("Setting up ui");
   ui.setup();
-
-  ui.drawSplash();
-  
-  // this will be toggled by a button press
+  logln("setting up ota");
+  // this is a placeholder, ota.begin() is called on long press of button 2
   ota.setup();
 
   logln("launched..");
@@ -197,6 +190,11 @@ void click2(Button2& b) {
       log("Button 2 Long Press For:");
       logln(b.wasPressedFor());
       ui.drawGear();
+      if(ota.polling){
+        ota.end();
+      } else {
+        ota.begin();
+      }
     } else {
       logln("Button 2 Press");
     }
