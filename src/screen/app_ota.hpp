@@ -6,7 +6,7 @@ class AppOta {
   #endif
 
   AsyncWebServer *WebServer;
-   Preferences *AppPreferences;
+  Preferences *AppPreferences;
 
   public:
   
@@ -28,6 +28,9 @@ class AppOta {
       return;
     }
     polling = true;
+    if(ssid == "" || password == ""){
+      return;
+    }
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
 

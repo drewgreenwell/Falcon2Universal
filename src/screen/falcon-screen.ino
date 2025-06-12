@@ -5,7 +5,7 @@
 #define LASER_TRIGGER_PIN 2
 #define LASER_MONITOR_PIN 15
 #define LASER_ALARM_PIN 27
-#define LASER_STATE_ON_BOOT LOW // LOW for fans powered down by default, HIGH for fans on
+#define LASER_STATE_ON_BOOT HIGH // LOW for fans powered down by default, HIGH for fans on
 
 #define BTN1_PIN 35
 #define BTN2_PIN 0
@@ -15,7 +15,7 @@
 #define LASER_DEBUG 1
 #define OTA_DEBUG 1
 
-#define UI_TESTING 1            // flag for testing ui states
+#define UI_TESTING 0            // flag for testing ui states
 
 #define BAUD_RATE 9600
 

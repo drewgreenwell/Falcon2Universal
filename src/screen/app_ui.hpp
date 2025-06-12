@@ -14,7 +14,7 @@ class AppUi {
   LaserCommunicator *laser;
   PNG *pngDecoder;
   TFT_eSPI *tft;
-  AppTimer uiTimer = AppTimer(100, true, true); // delay, active, repeat
+  AppTimer uiTimer = AppTimer(333, true, true); // delay, active, repeat
   int16_t screenHeight = 135;
   int16_t screenWidth = 240;
   int activeAlarmsLen = 2;
@@ -117,13 +117,13 @@ class AppUi {
     while(amt--){
       msg.concat(String("."));
     }
-    drawString(msg.c_str(), bootingX, bootingY, bootingW, bootingH, TC_DATUM, 2, UI_FONT_SMALL);
+    drawString(msg.c_str(), bootingX, bootingY, bootingW, bootingH, TL_DATUM, 2, UI_FONT_SMALL);
   }
 
   void boot_ui_update() {
     prep_ui_update();
     drawSplash();
-    drawString("BOOTING", bootingX, bootingY, bootingW, bootingH, TC_DATUM, 2, UI_FONT_SMALL);
+    drawString("BOOTING", bootingX, bootingY, bootingW, bootingH, TL_DATUM, 2, UI_FONT_SMALL);
   }
 
   void ui_update() {

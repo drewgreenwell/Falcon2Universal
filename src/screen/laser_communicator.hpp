@@ -248,7 +248,7 @@ class LaserCommunicator {
       inputString = "";
     }
     // model name is the only message at this length
-    // the controller does not echo the header, it jus returns the previous message in this case
+    // the controller does not echo the header, it just returns the previous message in this case
     if (inputData.length >= 100){
       byte dataLen = inputData.data[4];
       byte dataStart = 8;
