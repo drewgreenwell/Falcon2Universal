@@ -132,7 +132,7 @@ class AppUi {
       modelNameWritten = false;
     }
     if(!modelNameWritten) {
-      if(laser->modelName != "") {
+      if(laser->modelName.length() != 0) {
         drawString(laser->modelName.c_str(), modelX, modelY, modelW, modelH, TC_DATUM, 2, UI_FONT_LARGE);
         modelNameWritten = true;
       } else {
@@ -147,9 +147,9 @@ class AppUi {
   }
 
   void draw_alarm_codes() {
-    String str("Air ");
-    str.concat(millis());
-    drawString(str.c_str(), alarmX, alarmY, alarmW, alarmH, TC_DATUM, 2, UI_FONT_LARGE);
+    //String str("Air ");
+    //str.concat(millis());
+    //drawString(str.c_str(), alarmX, alarmY, alarmW, alarmH, TC_DATUM, 2, UI_FONT_LARGE);
     return;
     tft->setTextSize(3);
     for(int i = 0; i < alarmLen; i++){
