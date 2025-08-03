@@ -131,7 +131,10 @@ class AppUi {
       prep_ui_update();
       modelNameWritten = false;
     }
-    if(!modelNameWritten) {
+    bool beamChange = drawBeam();
+    drawVersion();
+    draw_alarm_codes();
+    if(!modelNameWritten || beamChange) {
       if(laser->modelName.length() != 0) {
         drawString(laser->modelName.c_str(), modelX, modelY, modelW, modelH, TC_DATUM, 2, UI_FONT_LARGE);
         modelNameWritten = true;
@@ -140,9 +143,7 @@ class AppUi {
       }
     }
     
-    drawBeam();
-    drawVersion();
-    draw_alarm_codes();
+    
     
   }
 
@@ -221,31 +222,35 @@ class AppUi {
     drawVersion();
   }
 
-bool again = false;
-  void drawBeam() {
+  bool again = false;
+
+  bool drawBeam() {
     if (laser->laserState == HIGH){
       if(laser->laserVal > 0){
         if(lastState == 2){
-          return;
+          return false;
         }
         drawBeamActive();
         lastState = 2;
+        return true;
       } else {
         if(lastState == 1){
-          return;
+          return false;
         }
         drawBeamInactive();
         lastState = 1;
+        return true;
       }
     } else {
       if(lastState == 0) {
         if(again) {
-            return;
-          }
-          again = true;
+            return false;
+        }
+        again = true;
       }
       drawBeamNoPower();
       lastState = 0;
+      return true;
     }
   }
 
