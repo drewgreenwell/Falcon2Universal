@@ -5,8 +5,8 @@
 #define MAX_IMAGE_WIDTH 240 // Sets rendering line buffer lengths
 enum PngType { SPLASH_PNG, GEAR_PNG, LOGO_PNG, BEAM_PNG, BEAM_BW_PNG, BEAM_INACTIVE_PNG };
 PngType pngType = GEAR_PNG;
-int16_t gearX = 40;
-int16_t gearY = 40;
+int16_t gearX = 0;
+int16_t gearY = 0;
 int16_t logoX = 5;
 int16_t logoY = 118;
 int16_t logoH = 20;
@@ -20,6 +20,10 @@ int16_t versionX = 190;
 int16_t versionY = 125;
 int16_t versionH = 20;
 int16_t versionW = 50;
+
+int16_t btn1X = 0;
+int16_t btn1Y = 125;
+
 int16_t alarmX = 80;
 int16_t alarmY = 80;
 int16_t alarmW = 120;

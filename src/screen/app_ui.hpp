@@ -14,6 +14,7 @@ class AppUi {
   LaserCommunicator *laser;
   PNG *pngDecoder;
   TFT_eSPI *tft;
+  AppOta *ota;
   AppTimer uiTimer = AppTimer(333, true, true); // delay, active, repeat
   int16_t screenHeight = 135;
   int16_t screenWidth = 240;
@@ -25,7 +26,7 @@ class AppUi {
   int activeAlarms[14] = {0,1,0,0,0,0,0,0,0,0,0,0,1,0};
 
   bool modelNameWritten = false;  // has the modelName been drawn on the screen, a delay in handshake may leave this blank the first couple loops
-
+  bool configActive = false;
   enum View { SPLASH, WAITING, BOOTING, BOOTED, CONFIG, NONE };
   View view = SPLASH;
   #if !UI_TESTING
@@ -38,10 +39,11 @@ class AppUi {
   uint8_t defaultFontId = 0;
   uint8_t largeFontId = 0;
 
-  AppUi(LaserCommunicator *laser, PNG *png, TFT_eSPI *display) {//}: spr(display) {
+  AppUi(LaserCommunicator *laser, PNG *png, TFT_eSPI *display, AppOta *ota) {//}: spr(display) {
     this->laser = laser;
     this->pngDecoder = png;
     this->tft = display;
+    this->ota = ota;
     AppUi::instance = this;
   }
 
@@ -49,13 +51,17 @@ class AppUi {
 
   static inline AppUi* instance = nullptr;  // static instance for png decoding to reference
   
-  static AppUi init(LaserCommunicator *laser, PNG *png, TFT_eSPI *display) {
-    AppUi appUi = AppUi(laser, png, display);
+  static AppUi init(LaserCommunicator *laser, PNG *png, TFT_eSPI *display, AppOta *ota) {
+    AppUi appUi = AppUi(laser, png, display, ota);
     return appUi;
   }
 
   int* getActiveAlarms() {
     return activeAlarms;
+  }
+
+  void setConfigActive(bool val) {
+    configActive = val;
   }
 
   void setup() {
@@ -67,7 +73,7 @@ class AppUi {
 
   void loop() {
     uiTimer.loop();
-    if(uiTimer.elapsed()) {
+    if (uiTimer.elapsed()) {
       bool laserBooted = laser->hasBooted();
       bool waitingToBoot = laser->isWaitingToBoot();
 #if UI_TESTING
@@ -75,19 +81,22 @@ class AppUi {
       laserBooted = true;
       waitingToBoot = false;
 #endif
-      if(!laserBooted){
-        if(waitingToBoot){
-          if(view == WAITING && lastView == WAITING) {
+      if (configActive) {
+        view = CONFIG;
+        config_ui_update();
+      } else if (!laserBooted) {
+        if (waitingToBoot){
+          if (view == WAITING && lastView == WAITING) {
             waitTicks += 1;
-            if(waitTicks > 3){
+            if (waitTicks > 3) {
               waitTicks = 0;
             }
           }
           view = WAITING;
           logln("waiting");
           waiting_ui_update();
-        }else {
-          if(view == BOOTING && lastView == BOOTING){
+        } else {
+          if (view == BOOTING && lastView == BOOTING) {
             return;
           }
           view = BOOTING;
@@ -105,6 +114,12 @@ class AppUi {
     tft->fillScreen(TFT_WHITE); 
     tft->setTextWrap(false);
     tft->setTextColor(TFT_BLACK, TFT_WHITE);
+  }
+
+  void prep_dark_ui_update() {
+    tft->fillScreen(TFT_BLACK); 
+    tft->setTextWrap(false);
+    tft->setTextColor(TFT_WHITE, TFT_BLACK);
   }
 
   void waiting_ui_update() {
@@ -142,9 +157,42 @@ class AppUi {
         drawString("Receiving Data", modelX, modelY, modelW, modelH, TC_DATUM, 2, UI_FONT_LARGE);
       }
     }
-    
-    
-    
+  }
+
+  void config_ui_update() {
+    if(lastView != CONFIG){
+      prep_dark_ui_update();
+      drawGear();
+    }
+    int16_t configX = (screenWidth / 2) - 56;
+    drawString("Config", configX, 10, bootingW, bootingH, TC_DATUM, 2, UI_FONT_LARGE, false);
+    if (this->ota->resetFlag){
+      drawString("Are you sure you want to reset WiFi?", 0, 80, screenWidth, bootingH, TL_DATUM, 1, nullptr, false);
+      drawString("Yes", btn1X, btn1Y, versionW, versionH, TL_DATUM, 1, nullptr, false);
+      return;
+    }
+    drawString("Reset", btn1X, btn1Y, versionW, versionH, TL_DATUM, 1, nullptr, false);
+    String ip = String("ip address: ");
+    String ipAddress = this->ota->IP.toString();
+    ip.concat(ipAddress);
+    drawString(ip.c_str(), configX, 80, versionW + 100, versionH, TL_DATUM, 1, nullptr, false);
+    if (this->ota->hosting == true) {
+      String ssid = String("ssid");
+      String host = String("http://");
+      if (this->ota->polling){
+        ssid.concat(": ");
+        ssid.concat(this->ota->ssid);
+        host.concat(this->ota->hostName + ".local");
+      } else {
+        ssid.concat("/pw: ");
+        ssid.concat(this->ota->hostName);
+        ssid.concat("/" + this->ota->apPass);
+        host.concat(ipAddress);
+      }
+      drawString(ssid.c_str(), configX, 60, versionW + 150, versionH, TL_DATUM, 1, nullptr, false);
+      drawString(host.c_str(), configX, 100, versionW + 100, versionH, TL_DATUM, 1, nullptr, false);
+    }
+    drawVersion(false);
   }
 
   void draw_alarm_codes() {
@@ -181,17 +229,17 @@ class AppUi {
     }
   }
 
-  void drawVersion() {
+  void drawVersion(bool light = true) {
     String version("v");
     version.concat(APP_VERSION);
-    drawString(version.c_str(), versionX, versionY, versionW, versionH);
+    drawString(version.c_str(), versionX, versionY, versionW, versionH, TL_DATUM, 1, nullptr, light);
   }
 
-  void drawString(const char *msg, int x, int y, int width, int height, uint8_t datum = TL_DATUM, int fontSize = 1, const uint8_t font[] = nullptr) {
+  void drawString(const char *msg, int x, int y, int width, int height, uint8_t datum = TL_DATUM, int fontSize = 1, const uint8_t font[] = nullptr, bool light = true) {
     TFT_eSprite m = TFT_eSprite(tft);
     m.setColorDepth(8);
     m.createSprite(width, height);
-    m.fillSprite(TFT_WHITE);
+    m.fillSprite(light ? TFT_WHITE : TFT_BLACK);
     if(font != nullptr) {
       m.loadFont(font);
     } else {
@@ -199,7 +247,7 @@ class AppUi {
     }
     m.setTextSize(fontSize);
     m.setTextDatum(datum);
-    m.setTextColor(TFT_BLACK);
+    m.setTextColor(light ? TFT_BLACK : TFT_WHITE);
     double sx = 0;
     if(datum == TC_DATUM){
       sx = width / 2;

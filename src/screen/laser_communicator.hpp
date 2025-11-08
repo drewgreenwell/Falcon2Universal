@@ -8,7 +8,7 @@ class LaserCommunicator {
   #define DEFAULT_BOOT_DELAY 1185       // amount of time after first message received before responding 
   #define BOOT_INTERVAL 180             // amount of time between each boot step
   #define BOOT_BUMP_AMT 32              // amount of time added to bootInterval after first message
-  #define BOOT1a 4                      // send bootData1 5 times
+  #define BOOT1a 4                      // send bootData1 4 times
   #define BOOT2a 1                      // send bootData2 1 time
   #define BOOT1b 5                      // send bootData1 5 times
   #define BOOT2b 1                      // send bootData2 1 time

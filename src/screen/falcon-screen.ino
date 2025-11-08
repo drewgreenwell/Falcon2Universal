@@ -1,4 +1,4 @@
-#define APP_VERSION "2.0.0"
+#define APP_VERSION "2.0.1"
 
 #define LASER_RX_PIN 25
 #define LASER_TX_PIN 26
@@ -72,7 +72,7 @@ LaserCommunicator laser(&SerialPort);
 PNG png; // PNG decoder instance
 TFT_eSPI display = TFT_eSPI();
 
-AppUi ui = AppUi::init(&laser, &png, &display);
+AppUi ui = AppUi::init(&laser, &png, &display, &ota);
 
 Button2 button1;
 Button2 button2;
@@ -86,6 +86,12 @@ AppTimer debugTimer(1000, true, true);  // AppTimer(int interval, bool active, b
 void setup() {
   // save build version for updates
   prefs.begin("falcon-2-u", false);
+  // reset credentials
+  // String version = prefs.getString("version", "2.0.0");
+  //if (version == "2.0.0") {
+  //  prefs.putString("ssid", "");
+  //  prefs.putString("password", "");
+  //}
   prefs.putString("version", APP_VERSION);
   // serial to usb
   Serial.begin(BAUD_RATE); 
@@ -98,7 +104,7 @@ void setup() {
   logln("Setting up ui");
   ui.setup();
   logln("setting up ota");
-  // this is a placeholder, ota.begin() is called on long press of button 2
+  // ota.begin() is called on long press of button 2
   ota.setup();
 
   logln("launched..");
@@ -173,15 +179,26 @@ void app_loop() {
 }
 
 void click1(Button2& b) {
-  // check for really long clicks
-  if (b.wasPressedFor() > 1000) {
-    log("Button 1 Long Press For");
-    logln(b.wasPressedFor());
+  if(ota.hosting){
+    if(ota.resetFlag){
+      prefs.putString("ssid", "");
+      prefs.putString("password", "");
+      logln("restarting esp because of reset request credentials request.");
+      ESP.restart();
+    } else {
+      ota.resetFlag = true;
+    }
   } else {
-    logln("Button 1 Press, Sleep / Wake");
-    uint8_t currentState = digitalRead(LASER_TRIGGER_PIN);
-    laser.laserState = currentState == HIGH ? LOW : HIGH;
-    digitalWrite(LASER_TRIGGER_PIN, laser.laserState);
+    // check for really long clicks
+    if (b.wasPressedFor() > 1000) {
+      log("Button 1 Long Press For");
+      logln(b.wasPressedFor());
+    } else {
+      logln("Button 1 Press, Sleep / Wake");
+      uint8_t currentState = digitalRead(LASER_TRIGGER_PIN);
+      laser.laserState = currentState == HIGH ? LOW : HIGH;
+      digitalWrite(LASER_TRIGGER_PIN, laser.laserState);
+    }
   }
 }
 void click2(Button2& b) {
@@ -189,13 +206,21 @@ void click2(Button2& b) {
     if (b.wasPressedFor() > 1000) {
       log("Button 2 Long Press For:");
       logln(b.wasPressedFor());
-      ui.drawGear();
+      
       if(ota.polling){
         ota.end();
+        ui.setConfigActive(false);
+        ota.resetFlag = false;
       } else {
         ota.begin();
+        ui.setConfigActive(true);
       }
     } else {
+      if(ota.polling){
+        ota.end();
+        ui.setConfigActive(false);
+        ota.resetFlag = false;
+      }
       logln("Button 2 Press");
     }
 }
