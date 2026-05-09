@@ -22,6 +22,8 @@ Falcon Screen is a functional UI for the adapter based on the LilyGo T Display. 
 
 ## In Progress
 
+Update 2026-05-09: I've run the dump files, my notes, and project through AI and put the output into [./content/ai-summary](./content/ai-summary) So far it looks very promising and I'm working on testing the insights to get actual air pressure output and reliable fire state/alarm.
+
 Version 2 of the PCB has arrived and parts ~~are trickling in~~ are here and working well. I am using the current version with the Falcon 2 40W and FluidNC running on an MKS DLC32. The adapter will let you run the Falcon lasers on any laser or CNC setup you have that supports a 3 pin 24V laser. The adapter features a screen that outputs alarm codes and laser info and has fire sensor support. WiFi Portal and OTA are currently in progress. I am also working on the best way to sense activity from x/y axis to control the 24V power to the laser so that I can put it in idle mode (no fans) when the laser is not in use. Note: I have currently settled on allowing wake on laser pulse or manual sleep/wake of the laser with plans for this to be configurable. The Falcon 2 controller will turn on the fans any time power is sent to a motor or the laser, this is controlled by the Falcon 2 controller. Perhaps an accelerometer or gyroscope is a good option here as well. The T-Display has buttons and a screen to make these options as configurable as possible.
 
 [Video of original adapter (working on a new video)](https://www.youtube.com/shorts/gS-xerEGvpA)
